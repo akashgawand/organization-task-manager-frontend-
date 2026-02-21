@@ -1,65 +1,112 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Logo } from "@/components/icons";
 
 export default function Home() {
+  const roles = [
+    {
+      id: "super_admin",
+      title: "Super Admin / CEO",
+      description: "Global oversight, analytics, and governance",
+      href: "/login",
+      color: "from-purple-500 to-indigo-600",
+    },
+    {
+      id: "admin",
+      title: "Admin / Manager",
+      description: "Project and team orchestration",
+      href: "/login",
+      color: "from-blue-500 to-cyan-600",
+    },
+    {
+      id: "team_lead",
+      title: "Team Lead",
+      description: "Execution bridge between manager and employees",
+      href: "/login",
+      color: "from-green-500 to-emerald-600",
+    },
+    {
+      id: "senior_developer",
+      title: "Senior Developer",
+      description: "Technical leadership and code quality",
+      href: "/login",
+      color: "from-teal-500 to-cyan-600",
+    },
+
+    {
+      id: "employee",
+      title: "Employee",
+      description: "Personal productivity and task management",
+      href: "/login",
+      color: "from-orange-500 to-amber-600",
+    },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen flex-center flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6">
+      <div className="text-center mb-12 animate-fade-in">
+        <div className="flex-center mb-6">
+          <Logo size={64} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <h1 className="text-4xl font-bold mb-3">Team Task Management</h1>
+        <p className="text-lg text-[rgb(var(--color-text-secondary))] max-w-2xl">
+          A modern, minimal, highly-functional task management platform for
+          enterprise teams
+        </p>
+        <div className="mt-8">
+          <Link
+            href="/login"
+            className="btn btn-primary px-8 py-3 text-lg rounded-full shadow-lg hover:scale-105 transition-transform"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Log In to Workspace
+          </Link>
         </div>
-      </main>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl w-full">
+        {roles.map((role, index) => (
+          <Link
+            key={role.id}
+            href={role.href}
+            className="card hover:shadow-xl transition-all group animate-slide-up"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <div
+              className={`w-12 h-12 rounded-lg bg-gradient-to-br ${role.color} mb-4 flex-center text-white`}
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2 group-hover:text-[rgb(var(--color-accent))] transition-colors">
+              {role.title}
+            </h3>
+            <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+              {role.description}
+            </p>
+            <div className="mt-4 flex items-center text-sm text-[rgb(var(--color-accent))] font-medium">
+              Sign In →
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div
+        className="mt-12 text-center text-sm text-[rgb(var(--color-text-tertiary))] animate-fade-in"
+        style={{ animationDelay: "400ms" }}
+      >
+        <p>Select a role to explore the dashboard</p>
+        <p className="mt-2">Built with Next.js, TypeScript, and Tailwind CSS</p>
+      </div>
     </div>
   );
 }
