@@ -1,15 +1,31 @@
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ExtendedProject } from "../types";
 import HealthIndicator from "./HealthIndicator";
 import Avatar from "@/components/shared/Avatar";
-import { Calendar, Users, MoreVertical } from "lucide-react";
+import {
+  Calendar,
+  Users,
+  MoreVertical,
+  Edit2,
+  Settings,
+  Trash2,
+} from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface ProjectCardProps {
   project: ExtendedProject;
+  onEdit?: (project: ExtendedProject) => void;
+  onDelete?: (project: ExtendedProject) => void;
+  onManage?: (project: ExtendedProject) => void;
 }
 
-export default function ProjectCard({ project }: ProjectCardProps) {
+export default function ProjectCard({
+  project,
+  onEdit,
+  onDelete,
+  onManage,
+}: ProjectCardProps) {
   const members = project.members.slice(0, 4);
 
   const statusColors: Record<string, string> = {
@@ -35,6 +51,22 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     cancelled: "Cancelled",
   };
 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMenuOpen]);
+
   return (
     <Link
       href={`/dashboard/projects/${project.id}`}
@@ -53,14 +85,73 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             {project.description}
           </p>
         </div>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-          }}
-          className="p-2 hover:bg-[rgb(var(--color-surface-hover))] rounded-lg transition-colors"
-        >
-          <MoreVertical className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
-        </button>
+
+        {/* Action Menu Container */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsMenuOpen(!isMenuOpen);
+            }}
+            className="p-2 hover:bg-[rgb(var(--color-surface-hover))] rounded-lg transition-colors focus:outline-none"
+          >
+            <MoreVertical className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
+          </button>
+
+          {/* Dropdown Menu */}
+          {isMenuOpen && (
+            <div
+              className="absolute right-0 mt-1 w-48 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl shadow-lg z-50 py-1"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              {onEdit && (
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-[rgb(var(--color-text-primary))] hover:bg-[rgb(var(--color-surface-hover))] flex items-center gap-2 transition-colors"
+                  onClick={() => {
+                    onEdit(project);
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit Project
+                </button>
+              )}
+              {onManage && (
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-[rgb(var(--color-text-primary))] hover:bg-[rgb(var(--color-surface-hover))] flex items-center gap-2 transition-colors"
+                  onClick={() => {
+                    onManage(project);
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <Settings className="w-4 h-4" />
+                  Manage Settings
+                </button>
+              )}
+              {onDelete && (
+                <>
+                  {(onEdit || onManage) && (
+                    <div className="h-px bg-[rgb(var(--color-border))] my-1 mx-2" />
+                  )}
+                  <button
+                    className="w-full text-left px-4 py-2 text-sm text-[rgb(var(--color-error))] hover:bg-[rgb(var(--color-error-light))] flex items-center gap-2 transition-colors"
+                    onClick={() => {
+                      onDelete(project);
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Project
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Status & Tags */}

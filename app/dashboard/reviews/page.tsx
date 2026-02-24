@@ -1,23 +1,55 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/features/permissions";
-import { mockTasks, mockUsers } from "@/lib/mockData";
 import { getReviewableTasks } from "@/features/reviews/utils";
 import ListView from "@/features/tasks/components/views/ListView";
 import TaskDetailModal from "@/components/modals/TaskDetailModal";
 import { Task } from "@/types";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Loader2 } from "lucide-react";
+import { taskService } from "@/app/services/taskServices";
+import { userService } from "@/app/services/userServices";
 
 export default function ReviewsPage() {
   const { user } = useAuth();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const [tasksRes, usersRes] = await Promise.all([
+        taskService.getTasks(),
+        userService.getUsers(),
+      ]);
+      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
+      setUsers(
+        Array.isArray(usersRes?.data)
+          ? usersRes.data
+          : Array.isArray(usersRes)
+            ? usersRes
+            : [],
+      );
+    } catch (error) {
+      console.error("Failed to fetch data for reviews:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const reviewableTasks = useMemo(() => {
-    return getReviewableTasks(user, mockTasks, mockUsers);
-  }, [user]);
+    if (!user) return [];
+    return getReviewableTasks(user, tasks, users);
+  }, [user, tasks, users]);
 
   const handleReviewClick = (task: Task) => {
     setSelectedTask(task);
@@ -57,10 +89,17 @@ export default function ReviewsPage() {
         {/* Task List */}
         <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-lg p-6">
           <h3 className="text-lg font-semibold mb-4">Pending Reviews</h3>
-          {reviewableTasks.length > 0 ? (
+
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="w-8 h-8 animate-spin text-[rgb(var(--color-accent))]" />
+            </div>
+          ) : reviewableTasks.length > 0 ? (
             <ListView tasks={reviewableTasks} onTaskClick={handleReviewClick} />
           ) : (
-            <p className="text-gray-500">No tasks found for review.</p>
+            <p className="text-[rgb(var(--color-text-tertiary))]">
+              No tasks found for review.
+            </p>
           )}
         </div>
 
@@ -70,10 +109,14 @@ export default function ReviewsPage() {
             task={selectedTask}
             isOpen={isModalOpen}
             onClose={handleCloseModal}
-            onStatusChange={(taskId, status) => {
-              console.log("Status changed:", taskId, status);
-              // In a real app, you'd update the task status via API here
-              // For now, we can just close the modal or refresh data
+            onStatusChange={async (taskId, status) => {
+              try {
+                await taskService.updateTaskStatus(taskId, status);
+                fetchData(); // Refresh the list to reflect status changes
+              } catch (error) {
+                console.error("Failed to update task status:", error);
+                alert("Failed to update task. Please try again.");
+              }
             }}
           />
         )}

@@ -23,12 +23,20 @@ export default function Avatar({
 
   const initials = getInitials(name);
 
+  const isValidAvatarUrl = (url: string) => {
+    return (
+      url.startsWith("http") || url.startsWith("/") || url.startsWith("data:")
+    );
+  };
+
+  const shouldRenderImage = avatar && isValidAvatarUrl(avatar);
+
   return (
     <div
       className={`${sizeClasses[size]} flex-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-medium ${className}`}
       title={name}
     >
-      {avatar ? (
+      {shouldRenderImage ? (
         <img
           src={avatar}
           alt={name}

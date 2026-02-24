@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/features/permissions";
 import { teamService } from "@/app/services/teamServices";
 import { taskService } from "@/app/services/taskServices";
+import { activityService } from "@/app/services/activityServices";
 import AddMemberModal from "@/features/teams/components/AddMemberModal";
 import EditTeamModal from "@/features/teams/components/EditTeamModal";
 import {
@@ -62,18 +63,70 @@ export default function TeamWorkspacePage({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
 
+  const fetchActivity = useCallback(async (teamMembers: any[]) => {
+    if (!teamMembers || teamMembers.length === 0) {
+      setActivities([]);
+      return;
+    }
+
+    try {
+      // Fetch recent acitivty per member (limit 10 each so it's not huge)
+      const activityPromises = teamMembers.map((member) =>
+        activityService
+          .getUserActivity(member.id, { limit: 10 })
+          .catch(() => ({ data: [] })),
+      );
+
+      const results = await Promise.all(activityPromises);
+
+      // Flatten arrays and map out values
+      const allActivities: ActivityItem[] = results.flatMap((res, index) => {
+        const member = teamMembers[index];
+        const dataArray = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+            ? res
+            : [];
+
+        return dataArray.map((act: any) => ({
+          id: String(
+            act.log_id || act.id || Math.random().toString(36).substring(2, 9),
+          ),
+          type: act.activity_type,
+          actor: act.user?.full_name || member.name || "Unknown User",
+          target: act.entity_type,
+          metadata: act.details || "",
+          createdAt: act.created_at || act.createdAt,
+        }));
+      });
+
+      // Sort by newest descending and cap to top 30
+      allActivities.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      setActivities(allActivities.slice(0, 30));
+    } catch (error) {
+      console.error("Failed to fetch team activities", error);
+    }
+  }, []);
+
   const fetchTeam = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await teamService.getTeamById(resolvedParams.id);
       setTeam(data);
+      if (data?.members) {
+        fetchActivity(data.members);
+      }
     } catch (err: any) {
       setError(err?.message || "Team not found");
     } finally {
       setLoading(false);
     }
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, fetchActivity]);
 
   useEffect(() => {
     fetchTeam();
@@ -619,7 +672,8 @@ interface ActivityItem {
 }
 
 function getActivityConfig(type: string) {
-  switch (type) {
+  const normType = (type || "").toUpperCase();
+  switch (normType) {
     case "TASK_COMPLETED":
       return {
         icon: CheckCircle2,
@@ -629,9 +683,16 @@ function getActivityConfig(type: string) {
     case "TASK_CREATED":
       return { icon: PlusCircle, iconBg: "bg-blue-500", text: "created" };
     case "TASK_REASSIGNED":
+    case "TASK_ASSIGNED":
       return { icon: Repeat, iconBg: "bg-amber-500", text: "reassigned" };
+    case "PROJECT_CREATED":
+      return { icon: Folder, iconBg: "bg-purple-500", text: "created" };
     default:
-      return { icon: CheckCircle2, iconBg: "bg-gray-400", text: "updated" };
+      return {
+        icon: Activity,
+        iconBg: "bg-[rgb(var(--color-border))]",
+        text: "updated",
+      };
   }
 }
 

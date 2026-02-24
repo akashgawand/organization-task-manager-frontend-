@@ -16,8 +16,9 @@ import {
 import { useAuth } from "@/features/permissions";
 import { projectService } from "@/app/services/projectServices";
 import { userService } from "@/app/services/userServices";
+import { teamService } from "@/app/services/teamServices";
 import CreateProjectModal from "@/components/modals/CreateProjectModal";
-import { TaskPriority } from "@/types";
+import { TaskPriority, Team } from "@/types";
 
 const ROLE_RANK: Record<string, number> = {
   SUPER_ADMIN: 5,
@@ -62,6 +63,7 @@ export default function CreateTaskModal({
   // Data state
   const [availableProjects, setAvailableProjects] = useState<any[]>([]);
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+  const [availableTeams, setAvailableTeams] = useState<Team[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   const isEmployee = (user?.role ?? "").toUpperCase() === "EMPLOYEE";
@@ -90,9 +92,19 @@ export default function CreateTaskModal({
         if (isEmployee) {
           // EMPLOYEEs cannot call GET /users (requires Manager/Admin).
           // Synthesise a single-entry list from their own auth data.
-          const [projects] = await Promise.all([projectService.getProjects()]);
+          const [projects, teamsRes] = await Promise.all([
+            projectService.getProjects(),
+            teamService.getTeams().catch(() => []),
+          ]);
           setAvailableProjects(Array.isArray(projects) ? projects : []);
-          console.log("Loaded projects for dropdown:", projects);
+
+          const userTeams = Array.isArray((teamsRes as any)?.data)
+            ? (teamsRes as any).data
+            : Array.isArray(teamsRes)
+              ? teamsRes
+              : [];
+          setAvailableTeams(userTeams as Team[]);
+
           setAvailableUsers(
             user
               ? [
@@ -106,11 +118,20 @@ export default function CreateTaskModal({
               : [],
           );
         } else {
-          const [projects, usersRes] = await Promise.all([
+          const [projects, usersRes, teamsRes] = await Promise.all([
             projectService.getProjects(),
             userService.getUsers(),
+            teamService.getTeams().catch(() => []),
           ]);
           setAvailableProjects(Array.isArray(projects) ? projects : []);
+
+          const rawTeams = Array.isArray((teamsRes as any)?.data)
+            ? (teamsRes as any).data
+            : Array.isArray(teamsRes)
+              ? teamsRes
+              : [];
+          setAvailableTeams(rawTeams as Team[]);
+
           const rawUsers: any[] = Array.isArray(usersRes?.data)
             ? usersRes.data
             : Array.isArray(usersRes)
@@ -219,21 +240,36 @@ export default function CreateTaskModal({
     setSubtasks(subtasks.filter((_, i) => i !== index));
   };
 
+  const handleTeamSelection = (teamId: string) => {
+    if (!teamId) return;
+    const team = availableTeams.find((t) => t.id === teamId);
+    if (!team) return;
+    const newMemberIds = ((team as any).members || team.memberIds || []).map(
+      (m: any) => String(m.userId || m.id || m),
+    );
+
+    // Add member IDs that aren't already selected
+    const updatedAssignees = [...new Set([...assigneeIds, ...newMemberIds])];
+    setAssigneeIds(updatedAssignees);
+  };
+
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/80"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 "
       onClick={onClose}
     >
       <div
-        className="bg-white max-h-[85vh] overflow-y-auto rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+        className="bg-[rgb(var(--color-surface))] max-h-[85vh] overflow-y-auto rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900">Create New Task</h2>
+        <div className="flex items-center justify-between p-6 border-b border-[rgb(var(--color-border))]">
+          <h2 className="text-xl font-bold text-[rgb(var(--color-text-primary))]">
+            Create New Task
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-[rgb(var(--color-text-tertiary))] hover:bg-[rgb(var(--color-surface-hover))] p-1 rounded-md transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -243,21 +279,22 @@ export default function CreateTaskModal({
           <div className="p-6 space-y-6">
             {/* Error */}
             {error && (
-              <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="px-4 py-3 bg-[rgb(var(--color-error-light))] border border-[rgb(var(--color-error))] rounded-lg text-sm text-[rgb(var(--color-error))]">
                 {error}
               </div>
             )}
 
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Task Title <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1">
+                Task Title{" "}
+                <span className="text-[rgb(var(--color-error))]">*</span>
               </label>
               <input
                 type="text"
                 required
                 minLength={3}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full px-4 py-2 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] text-[rgb(var(--color-text-primary))] rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/20 focus:border-[rgb(var(--color-accent))]"
                 placeholder="e.g., Redesign Homepage Hero Section"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -266,12 +303,12 @@ export default function CreateTaskModal({
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1">
                 Description
               </label>
               <textarea
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                className="w-full px-4 py-2 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] text-[rgb(var(--color-text-primary))] rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/20 focus:border-[rgb(var(--color-accent))] resize-none"
                 placeholder="Add details about the task..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -280,11 +317,11 @@ export default function CreateTaskModal({
 
             {/* Subtasks (Checklist) - Microsoft Planner Inspired */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <CheckCircle2 className="w-4 h-4 text-gray-400" />
+              <div className="flex items-center gap-2 text-sm font-medium text-[rgb(var(--color-text-primary))]">
+                <CheckCircle2 className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
                 <span>Checklist</span>
                 {subtasks.length > 0 && (
-                  <span className="text-xs font-normal text-gray-400 ml-1">
+                  <span className="text-xs font-normal text-[rgb(var(--color-text-tertiary))] ml-1">
                     ({subtasks.length} items)
                   </span>
                 )}
@@ -294,16 +331,16 @@ export default function CreateTaskModal({
                 {subtasks.map((sub, index) => (
                   <div
                     key={index}
-                    className="group flex items-center gap-3 p-2 border border-transparent hover:border-gray-100 hover:bg-gray-50 rounded-lg transition-all"
+                    className="group flex items-center gap-3 p-2 border border-transparent hover:border-[rgb(var(--color-border))] hover:bg-[rgb(var(--color-surface-hover))] rounded-lg transition-all"
                   >
-                    <div className="w-4 h-4 rounded-full border border-gray-300 shrink-0" />
-                    <span className="flex-1 text-sm text-gray-600">
+                    <div className="w-4 h-4 rounded-full border border-[rgb(var(--color-border))] shrink-0" />
+                    <span className="flex-1 text-sm text-[rgb(var(--color-text-secondary))]">
                       {sub.title}
                     </span>
                     <button
                       type="button"
                       onClick={() => removeSubtask(index)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-1 text-[rgb(var(--color-text-tertiary))] hover:text-[rgb(var(--color-error))] transition-all"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -313,7 +350,7 @@ export default function CreateTaskModal({
                 <div className="relative">
                   <input
                     type="text"
-                    className="w-full pl-9 pr-4 py-2 text-sm border-b border-transparent hover:border-gray-200 focus:border-primary focus:outline-none transition-all placeholder:text-gray-400"
+                    className="w-full pl-9 pr-4 py-2 text-sm bg-transparent border-b border-transparent hover:border-[rgb(var(--color-border))] focus:border-[rgb(var(--color-accent))] focus:outline-none transition-all placeholder:text-[rgb(var(--color-text-tertiary))] text-[rgb(var(--color-text-primary))]"
                     placeholder="Add an item"
                     value={newSubtaskTitle}
                     onChange={(e) => setNewSubtaskTitle(e.target.value)}
@@ -328,9 +365,9 @@ export default function CreateTaskModal({
                     type="button"
                     onClick={addSubtask}
                     disabled={!newSubtaskTitle.trim()}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 p-1 text-[#0043F6] hover:text-primary transition-colors disabled:opacity-50"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-1 hover:text-[rgb(var(--color-accent))] transition-colors disabled:opacity-50 text-[rgb(var(--color-text-tertiary))]"
                   >
-                    <Plus className="w-4 h-4 text-primary" />
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -339,15 +376,16 @@ export default function CreateTaskModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Project Select */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Project <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1">
+                  Project{" "}
+                  <span className="text-[rgb(var(--color-error))]">*</span>
                 </label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
                     <select
                       required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full pl-10 pr-4 py-2 border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] text-[rgb(var(--color-text-primary))] rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/20 focus:border-[rgb(var(--color-accent))] appearance-none disabled:opacity-50"
                       value={projectId}
                       onChange={(e) => setProjectId(e.target.value)}
                       disabled={isLoadingData}
@@ -370,10 +408,10 @@ export default function CreateTaskModal({
                   <button
                     type="button"
                     onClick={() => setIsCreateProjectModalOpen(true)}
-                    className="px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-primary transition-colors"
+                    className="px-3 py-2 border border-[rgb(var(--color-border))] rounded-lg hover:bg-[rgb(var(--color-surface-hover))] hover:border-[rgb(var(--color-accent))] transition-colors text-[rgb(var(--color-text-secondary))]"
                     title="Create New Project"
                   >
-                    <Plus className="w-4 h-4 text-gray-600" />
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -381,23 +419,44 @@ export default function CreateTaskModal({
               {/* Assignees */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))]">
                     Assignees
                   </label>
                   {assigneeIds.length > 0 && (
-                    <span className="text-xs text-primary font-medium">
+                    <span className="text-xs text-[rgb(var(--color-accent))] font-medium">
                       {assigneeIds.length} selected
                     </span>
                   )}
                 </div>
-                <div className="border border-gray-200 rounded-lg max-h-52 overflow-hidden bg-white flex flex-col">
-                  <div className="p-2 border-b border-gray-100">
+
+                {/* New: Assign Team directly */}
+                {!isEmployee && (
+                  <div className="mb-2">
+                    <select
+                      onChange={(e) => {
+                        handleTeamSelection(e.target.value);
+                        e.target.value = ""; // Reset to placeholder after select
+                      }}
+                      className="w-full text-xs px-2 py-1.5 border border-[rgb(var(--color-border))] rounded-md bg-[rgb(var(--color-surface))] text-[rgb(var(--color-text-secondary))] focus:outline-none focus:border-[rgb(var(--color-accent))]"
+                    >
+                      <option value="">+ Assign entire Team...</option>
+                      {availableTeams.map((team) => (
+                        <option key={team.id} value={team.id}>
+                          {team.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="border border-[rgb(var(--color-border))] rounded-lg max-h-52 overflow-hidden bg-[rgb(var(--color-surface))] flex flex-col">
+                  <div className="p-2 border-b border-[rgb(var(--color-border))]">
                     <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[rgb(var(--color-text-tertiary))]" />
                       <input
                         type="text"
                         placeholder="Search by name or role..."
-                        className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                        className="w-full pl-8 pr-3 py-1.5 text-xs border border-[rgb(var(--color-border))] bg-transparent text-[rgb(var(--color-text-primary))] rounded-md focus:outline-none focus:border-[rgb(var(--color-accent))] focus:ring-1 focus:ring-[rgb(var(--color-accent))]/20"
                         value={assigneeSearch}
                         onChange={(e) => setAssigneeSearch(e.target.value)}
                       />
@@ -405,11 +464,11 @@ export default function CreateTaskModal({
                   </div>
                   <div className="overflow-y-auto p-1 flex-1">
                     {isLoadingData ? (
-                      <p className="text-xs text-gray-400 p-3 text-center">
+                      <p className="text-xs text-[rgb(var(--color-text-tertiary))] p-3 text-center">
                         Loading users...
                       </p>
                     ) : visibleUsers.length === 0 ? (
-                      <p className="text-xs text-gray-500 p-3 text-center">
+                      <p className="text-xs text-[rgb(var(--color-text-tertiary))] p-3 text-center">
                         {availableUsers.length === 0
                           ? "No users available."
                           : "No users match your search."}
@@ -421,7 +480,7 @@ export default function CreateTaskModal({
                           return (
                             <label
                               key={uid}
-                              className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors"
+                              className="flex items-center gap-2 p-2 rounded hover:bg-[rgb(var(--color-surface-hover))] cursor-pointer transition-colors"
                             >
                               <input
                                 type="checkbox"
@@ -435,14 +494,14 @@ export default function CreateTaskModal({
                                     );
                                   }
                                 }}
-                                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                                className="w-4 h-4 text-[rgb(var(--color-accent))] border-[rgb(var(--color-border))] rounded focus:ring-[rgb(var(--color-accent))]"
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 truncate">
+                                <p className="text-sm font-medium text-[rgb(var(--color-text-primary))] truncate">
                                   {u.name || u.full_name}
                                   {uid === currentUserId ? " (You)" : ""}
                                 </p>
-                                <p className="text-xs text-gray-500 truncate capitalize">
+                                <p className="text-xs text-[rgb(var(--color-text-tertiary))] truncate capitalize">
                                   {(u.role || "")
                                     .toLowerCase()
                                     .replace("_", " ")}
@@ -459,14 +518,14 @@ export default function CreateTaskModal({
 
               {/* Due Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1">
                   Due Date
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
                   <input
                     type="date"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full pl-10 pr-4 py-2 border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] text-[rgb(var(--color-text-primary))] rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/20 focus:border-[rgb(var(--color-accent))]"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                   />
@@ -475,13 +534,13 @@ export default function CreateTaskModal({
 
               {/* Priority */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1">
                   Priority
                 </label>
                 <div className="relative">
-                  <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Flag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
                   <select
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none bg-white"
+                    className="w-full pl-10 pr-4 py-2 border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] text-[rgb(var(--color-text-primary))] rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/20 focus:border-[rgb(var(--color-accent))] appearance-none"
                     value={priority}
                     onChange={(e) =>
                       setPriority(e.target.value as TaskPriority)
@@ -498,15 +557,15 @@ export default function CreateTaskModal({
 
             {/* Attachments (placeholder) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">
                 Attachments
               </label>
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer">
-                <Paperclip className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">
+              <div className="border-2 border-dashed border-[rgb(var(--color-border))] rounded-xl p-8 text-center hover:border-[rgb(var(--color-accent))]/50 hover:bg-[rgb(var(--color-surface-hover))] transition-colors cursor-pointer">
+                <Paperclip className="w-8 h-8 text-[rgb(var(--color-text-tertiary))] mx-auto mb-2" />
+                <p className="text-sm text-[rgb(var(--color-text-secondary))]">
                   Click to upload or drag and drop
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-1">
                   SVG, PNG, JPG or PDF (max. 10MB)
                 </p>
               </div>
@@ -514,12 +573,12 @@ export default function CreateTaskModal({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50/50">
+          <div className="flex items-center justify-end gap-3 p-6 border-t border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))]">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text-primary))] hover:bg-[rgb(var(--color-surface-hover))] rounded-lg transition-colors disabled:opacity-50"
             >
               Cancel
             </button>

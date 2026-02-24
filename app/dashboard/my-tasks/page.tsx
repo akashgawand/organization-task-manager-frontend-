@@ -29,6 +29,7 @@ import { projectService } from "@/app/services/projectServices";
 import { ExtendedProject } from "@/features/projects/types";
 
 type FilterType = "all" | "today" | "week" | "overdue";
+type TaskScopeType = "my_tasks" | "team_tasks" | "all_tasks";
 
 export default function MyTasksPage() {
   const { user } = useAuth();
@@ -39,6 +40,10 @@ export default function MyTasksPage() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [filter, setFilter] = useState<FilterType>("all");
+  const [taskScope, setTaskScope] = useState<TaskScopeType>("my_tasks");
+  const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "status">(
+    "dueDate",
+  );
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,16 +54,22 @@ export default function MyTasksPage() {
       const fetchDate = async () => {
         try {
           setIsLoading(true);
+
+          // Only restrict by assigned_to if employee/team_lead
+          const isPrivileged =
+            user.role === "admin" || user.role === "super_admin";
+          const fetchParams = isPrivileged ? {} : { assigned_to: user.id };
+
           const [tasksRes, projectsRes] = await Promise.all([
-            taskService.getTasks({ assigned_to: user.id }),
+            taskService.getTasks(fetchParams),
             projectService.getProjects(),
           ]);
 
           if (tasksRes && tasksRes.data) {
             setAllTasks(tasksRes.data);
           }
-          if (projectsRes && projectsRes.data) {
-            setProjects(projectsRes.data);
+          if (Array.isArray(projectsRes)) {
+            setProjects(projectsRes);
           }
         } catch (error) {
           console.error("Error fetching tasks/projects:", error);
@@ -78,6 +89,24 @@ export default function MyTasksPage() {
 
     let filtered = allTasks;
 
+    // Apply Scope Filter (only relevant if they fetched more than just their own tasks)
+    if (taskScope === "my_tasks" && user) {
+      filtered = filtered.filter(
+        (t) =>
+          t.assigneeIds.includes(String(user.id)) ||
+          t.creatorId === String(user.id),
+      );
+    } else if (taskScope === "team_tasks" && user) {
+      // Find projects belonging to user's teams
+      const teamProjectIds = projects
+        .filter((p) =>
+          p.members.some((m) => String(m.userId) === String(user.id)),
+        )
+        .map((p) => p.id);
+
+      filtered = filtered.filter((t) => teamProjectIds.includes(t.projectId));
+    }
+
     // Filter by project
     if (selectedProjectId !== "all") {
       filtered = filtered.filter((t) => t.projectId === selectedProjectId);
@@ -86,7 +115,7 @@ export default function MyTasksPage() {
     // Filter by date
     switch (filter) {
       case "today":
-        return filtered.filter((t) => {
+        filtered = filtered.filter((t) => {
           if (!t.dueDate) return false;
           const dueDate = new Date(t.dueDate);
           return (
@@ -94,20 +123,49 @@ export default function MyTasksPage() {
             dueDate < new Date(today.getTime() + 24 * 60 * 60 * 1000)
           );
         });
+        break;
       case "week":
-        return filtered.filter((t) => {
+        filtered = filtered.filter((t) => {
           if (!t.dueDate) return false;
           const dueDate = new Date(t.dueDate);
           return dueDate >= today && dueDate <= weekFromNow;
         });
+        break;
       case "overdue":
-        return filtered.filter((t) => {
+        filtered = filtered.filter((t) => {
           if (!t.dueDate) return false;
           return new Date(t.dueDate) < today && t.status !== "done";
         });
-      default:
-        return filtered;
+        break;
     }
+
+    // Sort the tasks
+    filtered = [...filtered].sort((a, b) => {
+      if (sortBy === "dueDate") {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      if (sortBy === "priority") {
+        const priorityWeight = { critical: 4, high: 3, medium: 2, low: 1 };
+        return (
+          (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0)
+        );
+      }
+      if (sortBy === "status") {
+        const statusWeight = {
+          blocked: 5,
+          todo: 4,
+          in_progress: 3,
+          review: 2,
+          done: 1,
+        };
+        return (statusWeight[b.status] || 0) - (statusWeight[a.status] || 0);
+      }
+      return 0;
+    });
+
+    return filtered;
   };
 
   const filteredTasks = getFilteredTasks();
@@ -175,7 +233,10 @@ export default function MyTasksPage() {
       await taskService.createTask(taskData);
       // Refetch to stay in sync with backend
       if (user?.id) {
-        const tasksRes = await taskService.getTasks({ assigned_to: user.id });
+        const isPrivileged =
+          user.role === "admin" || user.role === "super_admin";
+        const fetchParams = isPrivileged ? {} : { assigned_to: user.id };
+        const tasksRes = await taskService.getTasks(fetchParams);
         if (tasksRes && tasksRes.data) {
           setAllTasks(tasksRes.data);
         }
@@ -251,6 +312,42 @@ export default function MyTasksPage() {
           </button>
         </div>
 
+        {/* Task Scope Filter (For Admins/Super Admins) */}
+        {(user?.role === "admin" || user?.role === "super_admin") && (
+          <div className="flex bg-[rgb(var(--color-surface))] p-1 rounded-lg border border-[rgb(var(--color-border))] w-fit">
+            <button
+              onClick={() => setTaskScope("my_tasks")}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                taskScope === "my_tasks"
+                  ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
+                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
+              }`}
+            >
+              My Tasks
+            </button>
+            <button
+              onClick={() => setTaskScope("team_tasks")}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                taskScope === "team_tasks"
+                  ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
+                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
+              }`}
+            >
+              Team Tasks
+            </button>
+            <button
+              onClick={() => setTaskScope("all_tasks")}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                taskScope === "all_tasks"
+                  ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
+                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
+              }`}
+            >
+              All Tasks
+            </button>
+          </div>
+        )}
+
         {/* Project Selector - NEW FEATURE */}
         <div className="bg-[rgb(var(--color-surface))] rounded-lg p-4 border border-[rgb(var(--color-border))]">
           <div className="flex items-center gap-4">
@@ -323,11 +420,24 @@ export default function MyTasksPage() {
             ))}
           </div>
 
-          {/* Sort Button */}
-          <button className="btn btn-secondary btn-sm">
-            <ArrowUpDown className="w-4 h-4" />
-            Sort
-          </button>
+          {/* Sort Button / Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-[rgb(var(--color-text-secondary))]">
+              Sort By:
+            </span>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="appearance-none pl-3 pr-8 py-1.5 text-sm rounded-md border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] hover:border-[rgb(var(--color-accent))] focus:outline-none focus:border-[rgb(var(--color-accent))] cursor-pointer font-medium"
+              >
+                <option value="dueDate">Due Date</option>
+                <option value="priority">Priority</option>
+                <option value="status">Status</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))] pointer-events-none" />
+            </div>
+          </div>
         </div>
 
         {/* Tasks Count */}

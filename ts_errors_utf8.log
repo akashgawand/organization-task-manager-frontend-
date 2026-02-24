@@ -1,0 +1,40 @@
+﻿app/dashboard/my-tasks/page.tsx(60,42): error TS2339: Property 'data' does not exist on type 'ExtendedProject[]'.
+app/dashboard/my-tasks/page.tsx(61,37): error TS2339: Property 'data' does not exist on type 'ExtendedProject[]'.
+app/dashboard/projects/page.tsx(130,59): error TS2339: Property 'user_id' does not exist on type 'User'.
+app/dashboard/projects/page.tsx(420,9): error TS2322: Type '(projectId: string, projectData: any) => Promise<void>' is not assignable to type '(project: any) => void'.
+  Target signature provides too few arguments. Expected 2 or more, but got 1.
+app/dashboard/senior-developer/page.tsx(35,26): error TS2339: Property 'projects' does not exist on type 'never'.
+app/dashboard/settings/page.tsx(26,3): error TS2300: Duplicate identifier 'settingsService'.
+app/dashboard/settings/page.tsx(27,3): error TS2300: Duplicate identifier 'SystemSettings'.
+app/dashboard/settings/page.tsx(31,10): error TS2300: Duplicate identifier 'useEffect'.
+app/dashboard/settings/page.tsx(32,10): error TS2300: Duplicate identifier 'toast'.
+app/dashboard/settings/page.tsx(34,3): error TS2300: Duplicate identifier 'settingsService'.
+app/dashboard/settings/page.tsx(35,3): error TS2300: Duplicate identifier 'SystemSettings'.
+app/dashboard/settings/page.tsx(37,10): error TS2300: Duplicate identifier 'useEffect'.
+app/dashboard/settings/page.tsx(38,10): error TS2300: Duplicate identifier 'toast'.
+app/dashboard/settings/page.tsx(386,50): error TS2322: Type '{ name: any; src: any; size: "sm"; }' is not assignable to type 'IntrinsicAttributes & AvatarProps'.
+  Property 'src' does not exist on type 'IntrinsicAttributes & AvatarProps'.
+app/dashboard/super-admin/page.tsx(158,19): error TS2322: Type '(v: number) => [string, "Completed"]' is not assignable to type 'Formatter<number, "Completed"> & ((value: number, name: "Completed", item: Payload<number, "Completed">, index: number, payload: Payload<number, "Completed">[]) => ReactNode | [...])'.
+  Type '(v: number) => [string, "Completed"]' is not assignable to type 'Formatter<number, "Completed">'.
+    Types of parameters 'v' and 'value' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+app/dashboard/super-admin/page.tsx(235,25): error TS2322: Type '(v: number, name: string) => [string, string]' is not assignable to type 'Formatter<number, string> & ((value: number, name: string, item: Payload<number, string>, index: number, payload: Payload<number, string>[]) => ReactNode | [...])'.
+  Type '(v: number, name: string) => [string, string]' is not assignable to type 'Formatter<number, string>'.
+    Types of parameters 'v' and 'value' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+app/services/projectServices.ts(42,9): error TS2322: Type '"owner"' is not assignable to type '"member"'.
+app/services/projectServices.ts(48,20): error TS2322: Type '"owner"' is not assignable to type '"member"'.
+components/modals/CreateProjectModal.tsx(41,22): error TS2345: Argument of type '{ id: string; name: any; description: any; status: any; avatar: any; leadId: string | undefined; lead: { id: string; name: any; email: any; role: any; avatar: any; department: any; position: any; isOnline: any; skills: any; } | undefined; ... 7 more ...; updatedAt: any; }[]' is not assignable to parameter of type 'SetStateAction<Team[]>'.
+  Type '{ id: string; name: any; description: any; status: any; avatar: any; leadId: string | undefined; lead: { id: string; name: any; email: any; role: any; avatar: any; department: any; position: any; isOnline: any; skills: any; } | undefined; ... 7 more ...; updatedAt: any; }[]' is not assignable to type 'Team[]'.
+    Type '{ id: string; name: any; description: any; status: any; avatar: any; leadId: string | undefined; lead: { id: string; name: any; email: any; role: any; avatar: any; department: any; position: any; isOnline: any; skills: any; } | undefined; ... 7 more ...; updatedAt: any; }' is not assignable to type 'Team'.
+      Types of property 'leadId' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+components/modals/EditProjectModal.tsx(41,22): error TS2345: Argument of type '{ id: string; name: any; description: any; status: any; avatar: any; leadId: string | undefined; lead: { id: string; name: any; email: any; role: any; avatar: any; department: any; position: any; isOnline: any; skills: any; } | undefined; ... 7 more ...; updatedAt: any; }[]' is not assignable to parameter of type 'SetStateAction<Team[]>'.
+  Type '{ id: string; name: any; description: any; status: any; avatar: any; leadId: string | undefined; lead: { id: string; name: any; email: any; role: any; avatar: any; department: any; position: any; isOnline: any; skills: any; } | undefined; ... 7 more ...; updatedAt: any; }[]' is not assignable to type 'Team[]'.
+    Type '{ id: string; name: any; description: any; status: any; avatar: any; leadId: string | undefined; lead: { id: string; name: any; email: any; role: any; avatar: any; department: any; position: any; isOnline: any; skills: any; } | undefined; ... 7 more ...; updatedAt: any; }' is not assignable to type 'Team'.
+      Types of property 'leadId' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.

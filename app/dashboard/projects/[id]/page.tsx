@@ -294,7 +294,7 @@ export default function ProjectDetailPage({
                     return (
                       <div key={phase.id} className="flex items-center gap-3">
                         <div
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 border-2
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 border-2
                             ${isDone ? "bg-green-500 border-green-500 text-white" : isActive ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 bg-white text-gray-400"}`}
                         >
                           {isDone ? "✓" : idx + 1}
@@ -531,7 +531,7 @@ export default function ProjectDetailPage({
                         className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 group"
                       >
                         <div
-                          className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
+                          className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
                             task.priority === "critical"
                               ? "bg-red-500"
                               : task.priority === "high"
@@ -550,7 +550,7 @@ export default function ProjectDetailPage({
                           )}
                         </div>
                         <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${
+                          className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
                             task.status === "done" ||
                             task.status === "completed"
                               ? "bg-green-100 text-green-700"

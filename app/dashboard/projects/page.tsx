@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { ExtendedProject } from "@/features/projects/types";
 import CreateProjectModal from "@/components/modals/CreateProjectModal";
+import EditProjectModal from "@/components/modals/EditProjectModal";
 
 type ProjectFilter = "all" | "active" | "archived" | "my-projects" | "starred";
 type SortOption = "recent" | "deadline" | "priority" | "name";
@@ -29,6 +30,10 @@ export default function ProjectsPage() {
   const [filter, setFilter] = useState<ProjectFilter>("all");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState<ExtendedProject | null>(
+    null,
+  );
 
   const fetchProjects = useCallback(async () => {
     setIsLoading(true);
@@ -56,6 +61,44 @@ export default function ProjectsPage() {
       console.error("Failed to create project:", error);
       alert("Failed to create project. Please try again.");
     }
+  };
+
+  const handleUpdateProject = async (projectId: string, projectData: any) => {
+    try {
+      await projectService.updateProject(projectId, projectData);
+      setIsEditModalOpen(false);
+      setProjectToEdit(null);
+      fetchProjects();
+    } catch (error) {
+      console.error("Failed to update project:", error);
+      alert("Failed to update project. Please try again.");
+    }
+  };
+
+  const handleDeleteProject = async (project: ExtendedProject) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete project "${project.name}"?`,
+      )
+    ) {
+      try {
+        await projectService.deleteProject(project.id);
+        fetchProjects();
+      } catch (error) {
+        console.error("Failed to delete project:", error);
+        alert("Failed to delete project. Please try again.");
+      }
+    }
+  };
+
+  const handleEditProject = (project: ExtendedProject) => {
+    setProjectToEdit(project);
+    setIsEditModalOpen(true);
+  };
+
+  const handleManageProject = (project: ExtendedProject) => {
+    // Navigation to settings tab or manage page
+    window.location.href = `/dashboard/projects/${project.id}?tab=settings`;
   };
 
   const filteredProjects = useMemo(() => {
@@ -258,7 +301,13 @@ export default function ProjectsPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {starredProjects.map((p) => (
-                    <ProjectCard key={p.id} project={p} />
+                    <ProjectCard
+                      key={p.id}
+                      project={p}
+                      onEdit={handleEditProject}
+                      onDelete={handleDeleteProject}
+                      onManage={handleManageProject}
+                    />
                   ))}
                 </div>
               </div>
@@ -273,7 +322,13 @@ export default function ProjectsPage() {
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {activeProjects.map((p) => (
-                      <ProjectCard key={p.id} project={p} />
+                      <ProjectCard
+                        key={p.id}
+                        project={p}
+                        onEdit={handleEditProject}
+                        onDelete={handleDeleteProject}
+                        onManage={handleManageProject}
+                      />
                     ))}
                   </div>
                 </div>
@@ -287,7 +342,13 @@ export default function ProjectsPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {completedProjects.map((p) => (
-                    <ProjectCard key={p.id} project={p} />
+                    <ProjectCard
+                      key={p.id}
+                      project={p}
+                      onEdit={handleEditProject}
+                      onDelete={handleDeleteProject}
+                      onManage={handleManageProject}
+                    />
                   ))}
                 </div>
               </div>
@@ -349,6 +410,15 @@ export default function ProjectsPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateProject}
+      />
+      <EditProjectModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setProjectToEdit(null);
+        }}
+        onSubmit={handleUpdateProject}
+        initialProject={projectToEdit}
       />
     </DashboardLayout>
   );

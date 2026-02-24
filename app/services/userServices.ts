@@ -41,4 +41,31 @@ export const userService = {
     }
     return null;
   },
+
+  async createUser(data: { name: string; email: string; password: string; role?: UserRole }) {
+    const payload = {
+      full_name: data.name,
+      email: data.email,
+      password: data.password,
+      role: data.role?.toUpperCase() || "EMPLOYEE",
+    };
+    const response = await api.post("/auth/register", payload);
+    return response;
+  },
+
+  async updateUser(id: string, data: Partial<User>) {
+    const payload: any = {};
+    if (data.name) payload.full_name = data.name;
+    if (data.email) payload.email = data.email;
+    if (data.role) payload.role = data.role.toUpperCase();
+    if (data.isActive !== undefined) payload.is_active = data.isActive;
+    
+    const response = await api.put(`/users/${id}`, payload);
+    return response;
+  },
+
+  async deleteUser(id: string) {
+    const response = await api.delete(`/users/${id}`);
+    return response;
+  },
 };
