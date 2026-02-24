@@ -36,9 +36,9 @@ export default function CreateProjectModal({
           const data = await teamService.getTeams();
           // Check if data is paginated or array
           if (Array.isArray(data)) {
-            setTeams(data);
+            setTeams(data as Team[]);
           } else if (data.data && Array.isArray(data.data)) {
-            setTeams(data.data);
+            setTeams(data.data as Team[]);
           }
         } catch (error) {
           console.error("Failed to fetch teams", error);

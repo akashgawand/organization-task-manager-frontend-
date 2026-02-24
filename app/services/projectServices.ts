@@ -39,13 +39,13 @@ function mapProject(p: any): ExtendedProject {
         userId: creatorId,
         name: p.creator.full_name || "Unknown",
         avatar: p.creator.avatar || undefined,
-        role: "owner" as const,
+        role: "lead" as any,
         joinedAt: new Date(p.created_at),
       });
     } else {
       // Mark the creator as owner
       const creator = members.find((m) => m.userId === creatorId);
-      if (creator) creator.role = "owner";
+      if (creator) creator.role = "lead" as any;
     }
   }
 

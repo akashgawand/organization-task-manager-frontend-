@@ -127,7 +127,7 @@ export default function ProjectsPage() {
         break;
       case "my-projects":
         filtered = filtered.filter((p) =>
-          p.members.some((m) => m.userId === String(user?.user_id || user?.id)),
+          p.members.some((m) => m.userId === String(user?.id)),
         );
         break;
       case "starred":
@@ -417,7 +417,11 @@ export default function ProjectsPage() {
           setIsEditModalOpen(false);
           setProjectToEdit(null);
         }}
-        onSubmit={handleUpdateProject}
+        onSubmit={async (projectData) => {
+          if (projectToEdit) {
+            await handleUpdateProject(projectToEdit.id, projectData);
+          }
+        }}
         initialProject={projectToEdit}
       />
     </DashboardLayout>

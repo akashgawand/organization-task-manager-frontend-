@@ -155,7 +155,7 @@ export default function SuperAdminDashboard() {
                     fontSize: 12,
                     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                   }}
-                  formatter={(v: number) => [`${v} tasks`, "Completed"]}
+                  formatter={(v: any) => [`${v} tasks`, "Completed"]}
                 />
                 <Bar
                   dataKey="Tasks"
@@ -232,7 +232,7 @@ export default function SuperAdminDashboard() {
                           fontSize: 12,
                           boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                         }}
-                        formatter={(v: number, name: string) => [
+                        formatter={(v: any, name: any) => [
                           `${v} (${Math.round((v / totalTasks) * 100)}%)`,
                           name,
                         ]}

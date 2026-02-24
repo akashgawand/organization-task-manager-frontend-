@@ -14,18 +14,20 @@ import { teamService } from "@/app/services/teamServices";
 import Avatar from "@/components/shared/Avatar";
 import { useEffect } from "react";
 
-interface CreateProjectModalProps {
+interface EditProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (project: any) => void;
+  initialProject?: any;
 }
 
-export default function CreateProjectModal({
+export default function EditProjectModal({
   isOpen,
   onClose,
   onSubmit,
-}: CreateProjectModalProps) {
-  console.log("CreateProjectModal render. isOpen:", isOpen);
+  initialProject,
+}: EditProjectModalProps) {
+  console.log("EditProjectModal render. isOpen:", isOpen);
   const [step, setStep] = useState<"details" | "phases">("details");
   const [teams, setTeams] = useState<Team[]>([]);
 
@@ -36,9 +38,9 @@ export default function CreateProjectModal({
           const data = await teamService.getTeams();
           // Check if data is paginated or array
           if (Array.isArray(data)) {
-            setTeams(data);
+            setTeams(data as Team[]);
           } else if (data.data && Array.isArray(data.data)) {
-            setTeams(data.data);
+            setTeams(data.data as Team[]);
           }
         } catch (error) {
           console.error("Failed to fetch teams", error);
@@ -54,30 +56,24 @@ export default function CreateProjectModal({
     status: "planning" as ProjectStatus,
     priority: "medium" as TaskPriority,
     tags: [],
-    phases: [
-      {
-        id: "p1",
-        name: "Discovery",
-        startDate: new Date(),
-        endDate: new Date(),
-        status: "planning",
-      },
-      {
-        id: "p2",
-        name: "Design",
-        startDate: new Date(),
-        endDate: new Date(),
-        status: "planning",
-      },
-      {
-        id: "p3",
-        name: "Development",
-        startDate: new Date(),
-        endDate: new Date(),
-        status: "planning",
-      },
-    ],
+    phases: [],
   });
+
+  useEffect(() => {
+    if (initialProject) {
+      setFormData({
+        name: initialProject.name || "",
+        description: initialProject.description || "",
+        status: (initialProject.status as ProjectStatus) || "planning",
+        priority: (initialProject.priority as TaskPriority) || "medium",
+        tags: initialProject.tags || [],
+        phases: initialProject.phases || [],
+        startDate: initialProject.startDate,
+        endDate: initialProject.endDate,
+        teamId: initialProject.teamId || "",
+      } as any);
+    }
+  }, [initialProject]);
 
   if (!isOpen) return null;
 
@@ -148,10 +144,10 @@ export default function CreateProjectModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-[rgb(var(--color-surface))] rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-6 border-b border-[rgb(var(--color-border))]">
-          <h2 className="text-xl font-semibold">Create New Project</h2>
+          <h2 className="text-xl font-semibold">Edit Project</h2>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-[rgb(var(--color-surface-hover))] transition-colors"
@@ -410,7 +406,7 @@ export default function CreateProjectModal({
                 onClick={handleSubmit}
                 className="btn btn-primary"
               >
-                Create Project
+                Save Changes
               </button>
             )}
           </div>

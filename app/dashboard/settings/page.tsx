@@ -424,7 +424,11 @@ function UserManagement() {
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <Avatar name={user.name} src={user.avatar} size="sm" />
+                        <Avatar
+                          name={user.name}
+                          avatar={user.avatar}
+                          size="sm"
+                        />
                         <div>
                           <p className="text-sm font-medium text-gray-900">
                             {user.name}

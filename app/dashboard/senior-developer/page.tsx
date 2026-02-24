@@ -32,7 +32,7 @@ export default function SeniorDeveloperDashboard() {
         // Assuming API returns array directly or inside data
         const projects = Array.isArray(projectsData)
           ? projectsData
-          : projectsData.projects || [];
+          : (projectsData as any).projects || [];
         setTeamProjects(projects);
         if (projects.length > 0) setSelectedProject(projects[0].id);
 

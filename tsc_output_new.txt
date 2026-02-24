@@ -1,0 +1,8 @@
+app/dashboard/projects/page.tsx(425,9): error TS2322: Type '{ isOpen: boolean; onClose: () => void; onSubmit: (projectData: any) => Promise<void>; initialProject: ExtendedProject | null; }' is not assignable to type 'IntrinsicAttributes & CreateProjectModalProps'.
+  Property 'initialProject' does not exist on type 'IntrinsicAttributes & CreateProjectModalProps'.
+app/dashboard/senior-developer/page.tsx(35,26): error TS2339: Property 'projects' does not exist on type 'never'.
+app/dashboard/super-admin/page.tsx(235,25): error TS2322: Type '(v: any, name: string) => [string, string]' is not assignable to type 'Formatter<any, string> & ((value: any, name: string, item: Payload<any, string>, index: number, payload: Payload<any, string>[]) => ReactNode | [...])'.
+  Type '(v: any, name: string) => [string, string]' is not assignable to type 'Formatter<any, string>'.
+    Types of parameters 'name' and 'name' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
