@@ -3,32 +3,32 @@ import { Department } from "@/features/departments/types";
 import { ExtendedProject } from "@/features/projects/types";
 
 export interface PerformanceMetrics {
-  completionRate: number;
-  averageCompletionTime: number;
-  onTimeDeliveryRate: number;
-  productivity: number;
+    completionRate: number;
+    averageCompletionTime: number;
+    onTimeDeliveryRate: number;
+    productivity: number;
 }
 
 export interface TeamProductivity {
-  teamName: string;
-  tasksCompleted: number;
-  averageTime: number;
-  efficiency: number;
+    teamName: string;
+    tasksCompleted: number;
+    averageTime: number;
+    efficiency: number;
 }
 
 export interface TrendData {
-  date: string;
-  completedTasks: number;
-  createdTasks: number;
-  activeUsers: number;
+    date: string;
+    completedTasks: number;
+    createdTasks: number;
+    activeUsers: number;
 }
 
 export interface ProjectStats {
-  total: number;
-  active: number;
-  completed: number;
-  delayed: number;
-  onHold: number;
+    total: number;
+    active: number;
+    completed: number;
+    delayed: number;
+    onHold: number;
 }
 
 export interface DeadlineStats {
@@ -65,12 +65,12 @@ export function calculatePerformanceMetrics(tasks: Task[]): PerformanceMetrics {
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((t) => t.status === "done").length;
     const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-    
+
     const tasksWithTimes = tasks.filter((t) => t.actualHours);
     const averageCompletionTime = tasksWithTimes.length > 0
         ? tasksWithTimes.reduce((sum, t) => sum + (t.actualHours || 0), 0) / tasksWithTimes.length
         : 0;
-        
+
     const tasksWithDueDate = tasks.filter((t) => t.dueDate && t.status === "done");
     const onTimeTasks = tasksWithDueDate.filter((t) => {
         if (!t.dueDate) return false;
@@ -79,13 +79,13 @@ export function calculatePerformanceMetrics(tasks: Task[]): PerformanceMetrics {
         return updatedAt <= dueDate;
     });
     const onTimeDeliveryRate = tasksWithDueDate.length > 0 ? (onTimeTasks.length / tasksWithDueDate.length) * 100 : 0;
-    
+
     const productivity = tasksWithTimes.reduce((sum, t) => {
         const estimated = t.estimatedHours || 1;
         const actual = t.actualHours || estimated;
         return sum + (estimated / actual);
     }, 0) / (tasksWithTimes.length || 1) * 100;
-    
+
     return { completionRate, averageCompletionTime, onTimeDeliveryRate, productivity };
 }
 
@@ -95,21 +95,40 @@ export function calculateTeamProductivity(users: User[], tasks: Task[]): TeamPro
         const completedTasks = userTasks.filter((t) => t.status === "done");
         const averageTime = completedTasks.length > 0 ? completedTasks.reduce((sum, t) => sum + (t.actualHours || 0), 0) / completedTasks.length : 0;
         const efficiency = completedTasks.length > 0 ? (completedTasks.filter((t) => {
-                const estimated = t.estimatedHours || 1;
-                const actual = t.actualHours || estimated;
-                return actual <= estimated;
-            }).length / completedTasks.length) * 100 : 0;
+            const estimated = t.estimatedHours || 1;
+            const actual = t.actualHours || estimated;
+            return actual <= estimated;
+        }).length / completedTasks.length) * 100 : 0;
         return { teamName: user.name, tasksCompleted: completedTasks.length, averageTime, efficiency };
     });
 }
 
-export function generateTrendData(tasks: Task[], days: number = 30): TrendData[] {
+export function generateTrendData(
+    tasks: Task[],
+    range: number | { start: Date, end: Date } = 30
+): TrendData[] {
     const data: TrendData[] = [];
-    const today = new Date();
-    for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split("T")[0];
+
+    let startDate: Date;
+    let endDate: Date;
+
+    if (typeof range === 'number') {
+        endDate = new Date();
+        startDate = new Date();
+        startDate.setDate(endDate.getDate() - (range - 1));
+    } else {
+        startDate = new Date(range.start);
+        endDate = new Date(range.end);
+    }
+
+    // Ensure we start at midnight to avoid time-of-day skipping
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split("T")[0];
         const completedTasks = tasks.filter((t) => {
             if (!t.updatedAt || t.status !== "done") return false;
             const updateDate = new Date(t.updatedAt).toISOString().split("T")[0];
@@ -120,6 +139,9 @@ export function generateTrendData(tasks: Task[], days: number = 30): TrendData[]
             return createDate === dateStr;
         }).length;
         data.push({ date: dateStr, completedTasks, createdTasks, activeUsers: Math.floor(Math.random() * 15) + 5 });
+
+        // Go forward one day
+        currentDate.setDate(currentDate.getDate() + 1);
     }
     return data;
 }
@@ -127,33 +149,61 @@ export function generateTrendData(tasks: Task[], days: number = 30): TrendData[]
 export function calculateStatusDistribution(tasks: Task[]) {
     const distribution: Record<string, number> = { todo: 0, in_progress: 0, review: 0, done: 0, blocked: 0 };
     tasks.forEach((task) => { distribution[task.status] = (distribution[task.status] || 0) + 1; });
-    return Object.entries(distribution).map(([name, value]) => ({ 
-        name: name.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()), 
-        value: value 
+    return Object.entries(distribution).map(([name, value]) => ({
+        name: name.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+        value: value
     }));
 }
 
 export function calculatePriorityDistribution(tasks: Task[]) {
     const distribution: Record<string, number> = { critical: 0, high: 0, medium: 0, low: 0 };
     tasks.forEach((task) => { distribution[task.priority] = (distribution[task.priority] || 0) + 1; });
-    return Object.entries(distribution).map(([name,value]) => ({ 
-        name: name.charAt(0).toUpperCase() + name.slice(1), 
-        value: value 
+    return Object.entries(distribution).map(([name, value]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value: value
     }));
 }
 
-export function calculateDepartmentWorkload(departments: Department[], tasks: Task[], users: User[]) {
+export function calculateDepartmentWorkload(departments: Department[], tasks: Task[]) {
     return departments.map((dept) => {
-        const deptEmployees = users.filter((u) => dept.employeeIds.includes(u.id));
         const deptTasks = tasks.filter((t) => t.assigneeIds.some((id) => dept.employeeIds.includes(id)));
-        return { 
-            name: dept.name, 
-            total: deptTasks.length, 
-            completed: deptTasks.filter((t) => t.status === "done").length, 
-            inProgress: deptTasks.filter((t) => t.status === "in_progress").length, 
-            pending: deptTasks.filter((t) => t.status === "todo").length 
+        return {
+            name: dept.name,
+            total: deptTasks.length,
+            completed: deptTasks.filter((t) => t.status === "done").length,
+            inProgress: deptTasks.filter((t) => t.status === "in_progress").length,
+            pending: deptTasks.filter((t) => t.status === "todo").length
         };
     });
+}
+
+export function calculateProjectWorkload(projects: Project[], tasks: Task[]) {
+    // Top 5 active projects sorted by amount of assigned tasks
+    return projects
+        .filter(p => p.status === 'active')
+        .map(project => {
+            const projectTasks = tasks.filter((t) => t.projectId === project.id);
+            return {
+                name: project.name,
+                total: projectTasks.length,
+                completed: projectTasks.filter((t) => t.status === "done").length,
+                inProgress: projectTasks.filter((t) => t.status === "in_progress").length,
+                pending: projectTasks.filter((t) => t.status === "todo").length
+            };
+        })
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5);
+}
+
+export function calculateUserCompletedTasks(users: User[], tasks: Task[]) {
+    return users.map(user => {
+        const userTasks = tasks.filter(t => t.assigneeIds.includes(user.id));
+        const completedTasks = userTasks.filter(t => t.status === "done").length;
+        return {
+            name: user.name,
+            completed: completedTasks
+        };
+    }).sort((a, b) => b.completed - a.completed);
 }
 
 export function calculateProjectStats(projects: Project[]): ProjectStats {
@@ -192,13 +242,12 @@ export function getDailyActiveUsers(users: User[]) {
 // Risk Analysis Logic
 export function getRiskAnalysis(projects: Project[], tasks: Task[], users: User[]): RiskAnalysis {
     const now = new Date();
-    const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
     const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
     // 1. Projects with <40% progress but >70% time elapsed
     const atRiskProjects = projects.filter(p => {
         if (p.status === 'completed' || p.status === 'cancelled' || !p.startDate) return false;
-        
+
         const start = new Date(p.startDate).getTime();
         const end = p.endDate ? new Date(p.endDate).getTime() : now.getTime() + SEVEN_DAYS; // Default to 7 days if no end
         const totalDuration = end - start;
@@ -211,19 +260,19 @@ export function getRiskAnalysis(projects: Project[], tasks: Task[], users: User[
     // 2. Burnout Risk: Users with too many active tasks (e.g., > 5)
     // Considering 'todo' and 'in_progress' and 'review' as active load
     const burnoutRiskUsers = users.filter(u => u.isActive).map(user => {
-        const activeTaskCount = tasks.filter(t => 
-            t.assigneeIds.includes(user.id) && 
+        const activeTaskCount = tasks.filter(t =>
+            t.assigneeIds.includes(user.id) &&
             ['todo', 'in_progress', 'review'].includes(t.status)
         ).length;
         return { user, taskCount: activeTaskCount };
-    }).filter(item => item.taskCount > 4).sort((a,b) => b.taskCount - a.taskCount);
+    }).filter(item => item.taskCount > 4).sort((a, b) => b.taskCount - a.taskCount);
 
     // 3. Tasks overdue (by > 1 day just to be safe, or > 0)
     // User asked "Tasks overdue by X days". Let's show all overdue tasks sorted by lateness.
     const overdueTasks = tasks.filter(t => {
         if (!t.dueDate || t.status === 'done' || t.status === 'blocked') return false;
         return new Date(t.dueDate) < now;
-    }).sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+    }).sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
     // 4. No activity projects (No update in last 7 days)
     const stagnantProjects = projects.filter(p => {
@@ -243,7 +292,7 @@ export function getRiskAnalysis(projects: Project[], tasks: Task[], users: User[
 // Project Specific Analytics
 export function calculateProjectTeamPerformance(project: ExtendedProject, tasks: Task[]): ProjectTeamPerformance[] {
     const projectTasks = tasks.filter(t => t.projectId === project.id);
-    
+
     // Use project members directly
     const members = project.members || [];
 
@@ -252,7 +301,7 @@ export function calculateProjectTeamPerformance(project: ExtendedProject, tasks:
         const completed = userTasks.filter(t => t.status === 'done').length;
         const inProgress = userTasks.filter(t => ['todo', 'in_progress', 'review'].includes(t.status)).length;
         const overdue = userTasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'done').length;
-        
+
         // Simple efficiency calculation based on overdue vs completed
         const total = userTasks.length;
         const efficiency = total > 0 ? Math.round(((total - overdue) / total) * 100) : 100;
@@ -271,7 +320,7 @@ export function calculateProjectTeamPerformance(project: ExtendedProject, tasks:
 export function getProjectRisks(project: ExtendedProject): ProjectRisk[] {
     // Generate some mock risks based on project status for demo
     const risks: ProjectRisk[] = [];
-    
+
     if (project.budget && (project.budget.used / project.budget.total) > 0.8) {
         risks.push({
             id: 'r1',
@@ -293,10 +342,10 @@ export function getProjectRisks(project: ExtendedProject): ProjectRisk[] {
             dateIdentified: new Date()
         });
     }
-    
+
     // Add a scope risk for 'red' or 'yellow' projects for flavor
     if (['red', 'yellow'].includes(project.health)) {
-         risks.push({
+        risks.push({
             id: 'r3',
             type: 'scope',
             severity: 'medium',
