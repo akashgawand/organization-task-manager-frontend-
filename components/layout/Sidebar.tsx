@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { UserRole } from "@/types";
 import {
-  Home,
   FolderKanban,
   CheckSquare,
   Users,
@@ -16,7 +16,6 @@ import {
   LayoutDashboard,
   ClipboardCheck,
 } from "lucide-react";
-import RoleSwitcher from "@/features/permissions/components/RoleSwitcher";
 
 interface SidebarProps {
   userRole: UserRole;
@@ -119,13 +118,13 @@ export default function Sidebar({ userRole }: SidebarProps) {
       <div className="flex items-center justify-between h-[var(--header-height)] px-6 border-b border-[rgb(var(--color-border))]">
         {!isCollapsed && (
           <div className="flex items-center gap-3">
-            <LayoutDashboard className="w-8 h-8 text-[rgb(var(--color-accent))]" />
-            <span className="font-semibold text-lg">TaskFlow</span>
+            <Image src="/logo.png" alt="ApexPlanner" width={32} height={32} className="w-8 h-8" />
+            <span className="font-semibold text-lg text-[rgb(var(--color-text-primary))]">ApexPlanner</span>
           </div>
         )}
         {isCollapsed && (
           <div className="flex items-center justify-center w-full">
-            <LayoutDashboard className="w-8 h-8 text-[rgb(var(--color-accent))]" />
+            <Image src="/logo.png" alt="ApexPlanner" width={32} height={32} className="w-8 h-8" />
           </div>
         )}
         <button
@@ -148,7 +147,9 @@ export default function Sidebar({ userRole }: SidebarProps) {
         {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive =
-            pathname === item.href || pathname?.startsWith(item.href + "/");
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname === item.href || pathname?.startsWith(item.href + "/");
 
           return (
             <Link
@@ -156,10 +157,9 @@ export default function Sidebar({ userRole }: SidebarProps) {
               href={item.href}
               className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-smooth
-                ${
-                  isActive
-                    ? "bg-[rgb(var(--color-accent-light))] text-[rgb(var(--color-accent))]"
-                    : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))]"
+                ${isActive
+                  ? "bg-[rgb(var(--color-accent-light))] text-[rgb(var(--color-accent))]"
+                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))]"
                 }
               `}
               title={isCollapsed ? item.label : undefined}

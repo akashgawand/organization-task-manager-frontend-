@@ -36,17 +36,16 @@ import { toast } from "react-hot-toast";
 import { User } from "@/types";
 
 const TABS = [
-  { id: "general", label: "General", icon: Globe },
+  // { id: "general", label: "General", icon: Globe },
   { id: "users", label: "Users", icon: Users },
   { id: "teams", label: "Teams", icon: UsersRound },
-  { id: "notifications", label: "Notifications", icon: Bell },
-
+  //{ id: "notifications", label: "Notifications", icon: Bell },
   // { id: "security", label: "Security", icon: Shield },
 ];
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("general");
+  const [activeTab, setActiveTab] = useState("users");
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -70,12 +69,12 @@ export default function SettingsPage() {
       <DashboardLayout user={user}>
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <Shield className="w-16 h-16 text-[rgb(var(--color-text-tertiary))] mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-[rgb(var(--color-text-primary))] mb-2">
               Access Denied
             </h2>
-            <p className="text-gray-600">
-              You don't have permission to access this page.
+            <p className="text-[rgb(var(--color-text-secondary))]">
+              You don&apos;t have permission to access this page.
             </p>
           </div>
         </div>
@@ -87,7 +86,7 @@ export default function SettingsPage() {
     if (isLoading) {
       return (
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <Loader2 className="w-8 h-8 text-[rgb(var(--color-accent))] animate-spin" />
         </div>
       );
     }
@@ -116,45 +115,74 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout user={user}>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold tracking-tight text-[rgb(var(--color-text-primary))] mb-1">
+            Settings
+          </h1>
+          <p className="text-[rgb(var(--color-text-secondary))]">
             Manage your workspace settings and preferences
           </p>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar Tabs */}
-          <div className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-2">
-              {TABS.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === tab.id
-                        ? "bg-primary/10 text-primary"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{tab.label}</span>
-                  </button>
-                );
-              })}
+          <div className="w-full lg:w-60 flex-shrink-0">
+            <div className="bg-[rgb(var(--color-surface))] rounded-2xl border border-[rgb(var(--color-border))] shadow-sm p-2 sticky top-24">
+              <nav className="flex lg:flex-col gap-1">
+                {TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${isActive
+                        ? "bg-[rgb(var(--color-accent-light))] text-[rgb(var(--color-accent))] shadow-sm"
+                        : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))]"
+                        }`}
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="font-medium text-sm">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
           </div>
 
           {/* Content Area */}
-          <div className="flex-1">{renderContent()}</div>
+          <div className="flex-1 min-w-0">{renderContent()}</div>
         </div>
       </div>
     </DashboardLayout>
   );
 }
+
+/* ─── Reusable Card Shell ────────────────────────────────────────────── */
+function SettingsCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-[rgb(var(--color-surface))] rounded-2xl border border-[rgb(var(--color-border))] shadow-sm overflow-hidden transition-all duration-300 hover:border-[rgb(var(--color-border-hover))] ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function CardHeader({ title, children }: { title: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between p-6 border-b border-[rgb(var(--color-border))] bg-gradient-to-r from-[rgba(var(--color-surface-hover),0.5)] to-transparent">
+      <h2 className="text-lg font-semibold text-[rgb(var(--color-text-primary))]">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">{children}</label>;
+}
+
+const inputClasses = "w-full px-4 py-2.5 bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/30 focus:border-[rgb(var(--color-accent))] transition-all duration-200";
 
 // General Settings Tab
 function GeneralSettings({
@@ -196,38 +224,32 @@ function GeneralSettings({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          General Settings
-        </h2>
-        <div className="space-y-6 max-w-2xl">
+      {/* <SettingsCard>
+        <CardHeader title="General Settings" />
+        <div className="p-6 space-y-6 max-w-2xl">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Company Name
-            </label>
+            <FieldLabel>Company Name</FieldLabel>
             <input
               type="text"
               value={formData.company_name || ""}
               onChange={(e) =>
                 setFormData({ ...formData, company_name: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className={inputClasses}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Timezone
-            </label>
+            <FieldLabel>Timezone</FieldLabel>
             <select
               value={formData.timezone || ""}
               onChange={(e) =>
                 setFormData({ ...formData, timezone: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className={inputClasses}
             >
-              <option>(UTC-05:00) Eastern Time (US & Canada)</option>
-              <option>(UTC-08:00) Pacific Time (US & Canada)</option>
+              <option>(UTC-05:00) Eastern Time (US &amp; Canada)</option>
+              <option>(UTC-08:00) Pacific Time (US &amp; Canada)</option>
               <option>(UTC+00:00) London</option>
               <option>(UTC+01:00) Central European Time</option>
               <option>(UTC+05:30) India Standard Time</option>
@@ -235,15 +257,13 @@ function GeneralSettings({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date Format
-            </label>
+            <FieldLabel>Date Format</FieldLabel>
             <select
               value={formData.date_format || ""}
               onChange={(e) =>
                 setFormData({ ...formData, date_format: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className={inputClasses}
             >
               <option>MM/DD/YYYY</option>
               <option>DD/MM/YYYY</option>
@@ -252,11 +272,9 @@ function GeneralSettings({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Time Format
-            </label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2">
+            <FieldLabel>Time Format</FieldLabel>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2.5 cursor-pointer group">
                 <input
                   type="radio"
                   name="timeFormat"
@@ -264,11 +282,11 @@ function GeneralSettings({
                   onChange={() =>
                     setFormData({ ...formData, time_format: "12-hour" })
                   }
-                  className="w-4 h-4 text-primary"
+                  className="w-4 h-4 text-[rgb(var(--color-accent))] accent-[rgb(var(--color-accent))]"
                 />
-                <span className="text-sm text-gray-700">12-hour</span>
+                <span className="text-sm text-[rgb(var(--color-text-primary))] group-hover:text-[rgb(var(--color-accent))] transition-colors">12-hour</span>
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2.5 cursor-pointer group">
                 <input
                   type="radio"
                   name="timeFormat"
@@ -276,14 +294,14 @@ function GeneralSettings({
                   onChange={() =>
                     setFormData({ ...formData, time_format: "24-hour" })
                   }
-                  className="w-4 h-4 text-primary"
+                  className="w-4 h-4 text-[rgb(var(--color-accent))] accent-[rgb(var(--color-accent))]"
                 />
-                <span className="text-sm text-gray-700">24-hour</span>
+                <span className="text-sm text-[rgb(var(--color-text-primary))] group-hover:text-[rgb(var(--color-accent))] transition-colors">24-hour</span>
               </label>
             </div>
           </div>
 
-          <div className="pt-4 flex gap-3">
+          <div className="pt-4 flex gap-3 border-t border-[rgb(var(--color-border))]">
             <button
               onClick={handleSave}
               disabled={isSaving}
@@ -304,7 +322,7 @@ function GeneralSettings({
             </button>
           </div>
         </div>
-      </div>
+      </SettingsCard> */}
     </div>
   );
 }
@@ -379,39 +397,40 @@ function UserManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">User Management</h2>
-            <button
-              className="btn btn-primary"
-              onClick={() => setIsAddingUser(true)}
-            >
-              <Plus className="w-4 h-4" />
-              Add User
-            </button>
-          </div>
+      <SettingsCard>
+        <CardHeader title="User Management">
+          <button
+            className="btn btn-primary"
+            onClick={() => setIsAddingUser(true)}
+          >
+            <Plus className="w-4 h-4" />
+            Add User
+          </button>
+        </CardHeader>
+
+        {/* Search */}
+        <div className="p-4 border-b border-[rgb(var(--color-border))]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
             <input
               type="text"
               placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className={`${inputClasses} pl-10`}
             />
           </div>
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <div className="flex justify-center p-12">
+            <Loader2 className="w-6 h-6 animate-spin text-[rgb(var(--color-accent))]" />
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <thead>
+                <tr className="text-left text-[11px] font-semibold text-[rgb(var(--color-text-tertiary))] uppercase tracking-wider border-b border-[rgb(var(--color-border))] bg-[rgba(var(--color-surface-hover),0.5)]">
                   <th className="px-6 py-3">User</th>
                   <th className="px-6 py-3">Role</th>
                   <th className="px-6 py-3">Department</th>
@@ -419,9 +438,9 @@ function UserManagement() {
                   <th className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-[rgb(var(--color-border))]">
                 {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+                  <tr key={user.id} className="hover:bg-[rgb(var(--color-surface-hover))] transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <Avatar
@@ -430,43 +449,42 @@ function UserManagement() {
                           size="sm"
                         />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-[rgb(var(--color-text-primary))]">
                             {user.name}
                           </p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
+                          <p className="text-xs text-[rgb(var(--color-text-tertiary))]">{user.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 capitalize">
-                        {(user.role || "").replace("_", " ")}
+                      <span className="px-2.5 py-1 text-[11px] font-semibold rounded-full bg-[rgba(var(--color-accent),0.1)] text-[rgb(var(--color-accent))] border border-[rgba(var(--color-accent),0.15)] capitalize">
+                        {(user.role || "").replace(/_/g, " ")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[rgb(var(--color-text-secondary))]">
                       {user.department || "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          user.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
+                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-full border ${user.isActive
+                          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                          : "bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] border-[rgb(var(--color-border))]"
+                          }`}
                       >
                         {user.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => setEditingUser(user)}
-                          className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-primary"
+                          className="p-2 rounded-lg hover:bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] hover:text-[rgb(var(--color-accent))] transition-all"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(user.id)}
-                          className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-red-600"
+                          className="p-2 rounded-lg hover:bg-red-500/10 text-[rgb(var(--color-text-tertiary))] hover:text-red-500 transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -478,7 +496,7 @@ function UserManagement() {
             </table>
           </div>
         )}
-      </div>
+      </SettingsCard>
 
       <EditUserModal
         isOpen={!!editingUser}
@@ -517,51 +535,50 @@ function TeamManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Team Management</h2>
+      <SettingsCard>
+        <CardHeader title="Team Management">
           <button className="btn btn-primary">
             <Plus className="w-4 h-4" />
             Create Team
           </button>
-        </div>
+        </CardHeader>
 
-        {isLoading ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {teams.length === 0 ? (
-              <div className="text-center p-8 text-gray-500">
-                No teams found.
-              </div>
-            ) : (
-              teams.map((team, i) => (
+        <div className="p-6">
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="w-6 h-6 animate-spin text-[rgb(var(--color-accent))]" />
+            </div>
+          ) : teams.length === 0 ? (
+            <div className="text-center p-12 text-[rgb(var(--color-text-tertiary))]">
+              <UsersRound className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="font-medium">No teams found</p>
+              <p className="text-sm mt-1">Create your first team to get started.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {teams.map((team, i) => (
                 <div
                   key={team.id || i}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className="border border-[rgb(var(--color-border))] rounded-xl p-4 hover:border-[rgb(var(--color-border-hover))] hover:shadow-sm transition-all duration-200"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-[rgb(var(--color-text-primary))]">
                         {team.name}
                       </h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                        <span>
-                          {team.memberCount || team.members?.length || 0}{" "}
-                          members
+                      <div className="flex items-center gap-4 text-sm text-[rgb(var(--color-text-secondary))] mt-1.5">
+                        <span className="flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5" />
+                          {team.memberCount || team.members?.length || 0} members
                         </span>
                         <span>
-                          {team.projectCount || team.projects?.length || 0}{" "}
-                          projects
+                          {team.projectCount || team.projects?.length || 0} projects
                         </span>
                         <span
-                          className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${
-                            team.status === "active"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
+                          className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize border ${team.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                            : "bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] border-[rgb(var(--color-border))]"
+                            }`}
                         >
                           {team.status || "Active"}
                         </span>
@@ -575,11 +592,11 @@ function TeamManagement() {
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </SettingsCard>
     </div>
   );
 }
@@ -649,20 +666,18 @@ function NotificationSettings({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          Notification Preferences
-        </h2>
-        <div className="space-y-6 max-w-2xl">
+      <SettingsCard>
+        <CardHeader title="Notification Preferences" />
+        <div className="p-6 space-y-6 max-w-2xl">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            <h3 className="text-sm font-semibold text-[rgb(var(--color-text-primary))] mb-3">
               Email Notifications
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {NOTIF_MAP.map((item, i) => (
                 <label
                   key={i}
-                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer"
+                  className="flex items-start gap-3 p-3.5 rounded-xl hover:bg-[rgb(var(--color-surface-hover))] cursor-pointer transition-colors border border-transparent hover:border-[rgb(var(--color-border))]"
                 >
                   <input
                     type="checkbox"
@@ -670,21 +685,21 @@ function NotificationSettings({
                     onChange={(e) =>
                       setFormData({ ...formData, [item.key]: e.target.checked })
                     }
-                    className="w-4 h-4 mt-0.5 text-primary rounded"
+                    className="w-4 h-4 mt-0.5 accent-[rgb(var(--color-accent))] rounded"
                   />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-[rgb(var(--color-text-primary))]">
                       {item.label}
                     </p>
-                    <p className="text-xs text-gray-500">{item.description}</p>
+                    <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-0.5">{item.description}</p>
                   </div>
                 </label>
               ))}
             </div>
           </div>
 
-          <div className="pt-4 border-t">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+          <div className="pt-4 border-t border-[rgb(var(--color-border))]">
+            <h3 className="text-sm font-semibold text-[rgb(var(--color-text-primary))] mb-3">
               Frequency
             </h3>
             <select
@@ -695,7 +710,7 @@ function NotificationSettings({
                   notification_frequency: e.target.value,
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className={inputClasses}
             >
               <option>Instant</option>
               <option>Daily digest</option>
@@ -703,7 +718,7 @@ function NotificationSettings({
             </select>
           </div>
 
-          <div className="pt-4 flex gap-3">
+          <div className="pt-4 flex gap-3 border-t border-[rgb(var(--color-border))]">
             <button
               onClick={handleSave}
               disabled={isSaving}
@@ -718,7 +733,7 @@ function NotificationSettings({
             </button>
           </div>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 }
@@ -767,21 +782,17 @@ function SecuritySettings({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          Security Settings
-        </h2>
-        <div className="space-y-6 max-w-2xl">
+      <SettingsCard>
+        <CardHeader title="Security Settings" />
+        <div className="p-6 space-y-6 max-w-2xl">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Session Timeout
-            </label>
+            <FieldLabel>Session Timeout</FieldLabel>
             <select
               value={formData.session_timeout || ""}
               onChange={(e) =>
                 setFormData({ ...formData, session_timeout: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className={inputClasses}
             >
               <option>15 minutes</option>
               <option>30 minutes</option>
@@ -791,12 +802,12 @@ function SecuritySettings({
             </select>
           </div>
 
-          <div className="border-t pt-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+          <div className="border-t border-[rgb(var(--color-border))] pt-6">
+            <h3 className="text-sm font-semibold text-[rgb(var(--color-text-primary))] mb-3">
               Password Policy
             </h3>
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
+            <div className="space-y-2">
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-[rgb(var(--color-surface-hover))] transition-colors">
                 <input
                   type="checkbox"
                   checked={!!formData.pass_min_length}
@@ -806,13 +817,13 @@ function SecuritySettings({
                       pass_min_length: e.target.checked,
                     })
                   }
-                  className="w-4 h-4 text-primary rounded"
+                  className="w-4 h-4 accent-[rgb(var(--color-accent))] rounded"
                 />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-[rgb(var(--color-text-primary))]">
                   Require minimum 8 characters
                 </span>
               </label>
-              <label className="flex items-center gap-3 cursor-pointer">
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-[rgb(var(--color-surface-hover))] transition-colors">
                 <input
                   type="checkbox"
                   checked={!!formData.pass_require_uppercase}
@@ -822,13 +833,13 @@ function SecuritySettings({
                       pass_require_uppercase: e.target.checked,
                     })
                   }
-                  className="w-4 h-4 text-primary rounded"
+                  className="w-4 h-4 accent-[rgb(var(--color-accent))] rounded"
                 />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-[rgb(var(--color-text-primary))]">
                   Require uppercase and lowercase letters
                 </span>
               </label>
-              <label className="flex items-center gap-3 cursor-pointer">
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-[rgb(var(--color-surface-hover))] transition-colors">
                 <input
                   type="checkbox"
                   checked={!!formData.pass_require_numbers}
@@ -838,11 +849,11 @@ function SecuritySettings({
                       pass_require_numbers: e.target.checked,
                     })
                   }
-                  className="w-4 h-4 text-primary rounded"
+                  className="w-4 h-4 accent-[rgb(var(--color-accent))] rounded"
                 />
-                <span className="text-sm text-gray-700">Require numbers</span>
+                <span className="text-sm text-[rgb(var(--color-text-primary))]">Require numbers</span>
               </label>
-              <label className="flex items-center gap-3 cursor-pointer">
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-[rgb(var(--color-surface-hover))] transition-colors">
                 <input
                   type="checkbox"
                   checked={!!formData.pass_require_special}
@@ -852,25 +863,25 @@ function SecuritySettings({
                       pass_require_special: e.target.checked,
                     })
                   }
-                  className="w-4 h-4 text-primary rounded"
+                  className="w-4 h-4 accent-[rgb(var(--color-accent))] rounded"
                 />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-[rgb(var(--color-text-primary))]">
                   Require special characters
                 </span>
               </label>
             </div>
           </div>
 
-          <div className="border-t pt-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+          <div className="border-t border-[rgb(var(--color-border))] pt-6">
+            <h3 className="text-sm font-semibold text-[rgb(var(--color-text-primary))] mb-3">
               Two-Factor Authentication
             </h3>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-[rgb(var(--color-background))] rounded-xl border border-[rgb(var(--color-border))]">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-[rgb(var(--color-text-primary))]">
                   Enable 2FA for all users
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-1">
                   Require authentication codes for login
                 </p>
               </div>
@@ -883,12 +894,12 @@ function SecuritySettings({
                   }
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                <div className="w-11 h-6 bg-[rgb(var(--color-border))] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[rgba(var(--color-accent),0.2)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[rgb(var(--color-border))] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[rgb(var(--color-accent))]"></div>
               </label>
             </div>
           </div>
 
-          <div className="pt-4 flex gap-3">
+          <div className="pt-4 flex gap-3 border-t border-[rgb(var(--color-border))]">
             <button
               onClick={handleSave}
               disabled={isSaving}
@@ -903,7 +914,7 @@ function SecuritySettings({
             </button>
           </div>
         </div>
-      </div>
+      </SettingsCard>
     </div>
   );
 }
