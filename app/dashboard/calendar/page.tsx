@@ -29,7 +29,7 @@ export default function CalendarPage() {
       if (!user?.id) return;
       setLoading(true);
       try {
-        const params: Record<string, any> = {};
+        const params: Record<string, any> = { limit: 500 };
         if (currentFilter === "my-tasks") {
           params.assigned_to = user.id;
         }
