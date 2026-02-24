@@ -11,6 +11,7 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Task } from "@/types";
+import { useState, useCallback } from "react";
 
 // ── Localizer ────────────────────────────────────────────────────────────────
 const locales = { "en-US": enUS };
@@ -21,18 +22,6 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
-
-// ── Priority colours (match existing design tokens as fallbacks) ─────────────
-const PRIORITY_COLORS: Record<string, string> = {
-  critical: "#ef4444",
-  high: "#f97316",
-  medium: "#f59e0b",
-  low: "#22c55e",
-};
-
-const STATUS_OPACITY: Record<string, string> = {
-  done: "80", // 50% opacity hex suffix
-};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface TaskEvent extends Event {
@@ -54,6 +43,12 @@ export default function CalendarView({
   onTaskClick,
   onDateClick,
 }: CalendarViewProps) {
+  const [view, setView] = useState("month" as any);
+  const [date, setDate] = useState(new Date());
+
+  const onNavigate = useCallback((newDate: Date) => setDate(newDate), []);
+  const onView = useCallback((newView: any) => setView(newView), []);
+
   // Map tasks → react-big-calendar events
   const events: TaskEvent[] = useMemo(
     () =>
@@ -76,19 +71,18 @@ export default function CalendarView({
     [tasks],
   );
 
-  // Custom event renderer — coloured pill with truncated title
+  // Custom event renderer
   const EventComponent = ({ event }: { event: object }) => {
     const e = event as TaskEvent;
-    const bg = PRIORITY_COLORS[e.priority] ?? "#6366f1";
-    const opacity = STATUS_OPACITY[e.status] ?? "cc";
+    const isDone = e.status === "done";
+
     return (
       <div
-        className="truncate text-xs font-medium px-1.5 py-0.5 rounded"
-        style={{
-          backgroundColor: `${bg}${opacity}`,
-          color: e.status === "done" ? "#6b7280" : "#fff",
-          textDecoration: e.status === "done" ? "line-through" : "none",
-        }}
+        className={`truncate text-xs font-medium px-2 py-1 rounded w-full h-full ${
+          isDone
+            ? "bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] line-through border border-[rgb(var(--color-border))]"
+            : "bg-linear-to-r from-[rgb(var(--color-accent))] to-[rgb(var(--color-accent-hover))] text-white shadow-sm"
+        }`}
         title={e.title as string}
       >
         {e.title as string}
@@ -276,7 +270,10 @@ export default function CalendarView({
       <Calendar<TaskEvent>
         localizer={localizer}
         events={events}
-        defaultView="month"
+        date={date}
+        view={view}
+        onNavigate={onNavigate}
+        onView={onView}
         views={["month", "week", "agenda"]}
         style={{ height: 600 }}
         // Fire onTaskClick when an event is clicked

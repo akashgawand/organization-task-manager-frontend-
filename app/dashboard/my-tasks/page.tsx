@@ -21,9 +21,11 @@ import {
   Plus,
   ArrowUpDown,
   ChevronDown,
+  Search,
 } from "lucide-react";
 import TaskDetailModal from "@/components/modals/TaskDetailModal";
 import CreateTaskModal from "@/features/tasks/components/CreateTaskModal";
+import Pagination from "@/components/shared/Pagination";
 import { taskService } from "@/app/services/taskServices";
 import { projectService } from "@/app/services/projectServices";
 import { ExtendedProject } from "@/features/projects/types";
@@ -44,44 +46,126 @@ export default function MyTasksPage() {
   const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "status">(
     "dueDate",
   );
+
+  // New Enhanced Filters & Pagination
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
+  // Backend tracking for Pagination metadata
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const fetchTasksData = async () => {
+    try {
+      setIsLoading(true);
+
+      const isPrivileged =
+        user?.role === "admin" || user?.role === "super_admin";
+
+      const baseParams: Record<string, any> = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+
+      if (!isPrivileged) {
+        baseParams.assigned_to = user?.id;
+      }
+      if (selectedProjectId !== "all") {
+        baseParams.project_id = selectedProjectId;
+      }
+      if (priorityFilter !== "all") {
+        baseParams.priority = priorityFilter.toUpperCase();
+      }
+
+      let allFetchedTasks: Task[] = [];
+      let maxTotalPages = 1;
+      let sumTotalCount = 0;
+
+      if (statusFilter === "all") {
+        // Fetch limit per column/status to populate the Kanban board evenly
+        const statusesToFetch = [
+          "TODO",
+          "IN_PROGRESS",
+          "REVIEW",
+          "DONE",
+          "BLOCKED",
+        ];
+        const statusPromises = statusesToFetch.map((st) =>
+          taskService.getTasks({ ...baseParams, status: st }),
+        );
+
+        const results = await Promise.all(statusPromises);
+
+        results.forEach((res) => {
+          if (res?.data) {
+            allFetchedTasks = [...allFetchedTasks, ...res.data];
+          }
+          if (res?.pagination) {
+            maxTotalPages = Math.max(
+              maxTotalPages,
+              res.pagination.totalPages || 1,
+            );
+            sumTotalCount += res.pagination.total || 0;
+          } else {
+            sumTotalCount += (res?.data || []).length;
+          }
+        });
+      } else {
+        const fetchParams = {
+          ...baseParams,
+          status: statusFilter.toUpperCase(),
+        };
+        const res = await taskService.getTasks(fetchParams);
+
+        if (res?.data) {
+          allFetchedTasks = res.data;
+        }
+        if (res?.pagination) {
+          maxTotalPages = res.pagination.totalPages || 1;
+          sumTotalCount = res.pagination.total || 0;
+        } else {
+          sumTotalCount = (res?.data || []).length;
+        }
+      }
+
+      const projectsRes = await projectService.getProjects();
+
+      setAllTasks(allFetchedTasks);
+      setTotalPages(maxTotalPages);
+      setTotalCount(sumTotalCount);
+
+      if (Array.isArray(projectsRes)) {
+        setProjects(projectsRes);
+      }
+    } catch (error) {
+      console.error("Error fetching tasks/projects:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
-      const fetchDate = async () => {
-        try {
-          setIsLoading(true);
-
-          // Only restrict by assigned_to if employee/team_lead
-          const isPrivileged =
-            user.role === "admin" || user.role === "super_admin";
-          const fetchParams = isPrivileged ? {} : { assigned_to: user.id };
-
-          const [tasksRes, projectsRes] = await Promise.all([
-            taskService.getTasks(fetchParams),
-            projectService.getProjects(),
-          ]);
-
-          if (tasksRes && tasksRes.data) {
-            setAllTasks(tasksRes.data);
-          }
-          if (Array.isArray(projectsRes)) {
-            setProjects(projectsRes);
-          }
-        } catch (error) {
-          console.error("Error fetching tasks/projects:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchDate();
+      fetchTasksData();
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    user,
+    currentPage,
+    itemsPerPage,
+    selectedProjectId,
+    statusFilter,
+    priorityFilter,
+  ]);
 
-  // Filter tasks based on selected filter
   const getFilteredTasks = () => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -97,7 +181,6 @@ export default function MyTasksPage() {
           t.creatorId === String(user.id),
       );
     } else if (taskScope === "team_tasks" && user) {
-      // Find projects belonging to user's teams
       const teamProjectIds = projects
         .filter((p) =>
           p.members.some((m) => String(m.userId) === String(user.id)),
@@ -105,11 +188,6 @@ export default function MyTasksPage() {
         .map((p) => p.id);
 
       filtered = filtered.filter((t) => teamProjectIds.includes(t.projectId));
-    }
-
-    // Filter by project
-    if (selectedProjectId !== "all") {
-      filtered = filtered.filter((t) => t.projectId === selectedProjectId);
     }
 
     // Filter by date
@@ -137,6 +215,16 @@ export default function MyTasksPage() {
           return new Date(t.dueDate) < today && t.status !== "done";
         });
         break;
+    }
+
+    // Filter by text search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.description?.toLowerCase().includes(q),
+      );
     }
 
     // Sort the tasks
@@ -169,6 +257,14 @@ export default function MyTasksPage() {
   };
 
   const filteredTasks = getFilteredTasks();
+  // With Backend Pagination, the slice is obsolete. Our API has pruned it.
+  // We mirror the filtered data array directly off the backend.
+  const paginatedTasks = filteredTasks;
+
+  // Reset pagination if filters alter the array size radically
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [totalPages, currentPage]);
 
   // Get user's projects (projects where user is a member)
   const userProjects = useMemo(() => {
@@ -232,15 +328,7 @@ export default function MyTasksPage() {
       // CreateTaskModal already sends assignee_ids — don't override with assigned_to
       await taskService.createTask(taskData);
       // Refetch to stay in sync with backend
-      if (user?.id) {
-        const isPrivileged =
-          user.role === "admin" || user.role === "super_admin";
-        const fetchParams = isPrivileged ? {} : { assigned_to: user.id };
-        const tasksRes = await taskService.getTasks(fetchParams);
-        if (tasksRes && tasksRes.data) {
-          setAllTasks(tasksRes.data);
-        }
-      }
+      fetchTasksData();
       setIsCreateModalOpen(false);
     } catch (error) {
       console.error("Failed to create task", error);
@@ -297,7 +385,8 @@ export default function MyTasksPage() {
           <div>
             <h1 className="text-3xl font-bold mb-2">My Tasks</h1>
             <p className="text-[rgb(var(--color-text-secondary))]">
-              {filteredTasks.length} {filter === "all" ? "" : filter} tasks
+              Showing {filteredTasks.length} {filter === "all" ? "" : filter}{" "}
+              tasks of {totalCount} total
               {selectedProjectId !== "all" && selectedProject
                 ? ` in ${selectedProject.name}`
                 : ""}
@@ -440,13 +529,92 @@ export default function MyTasksPage() {
           </div>
         </div>
 
-        {/* Tasks Count */}
+        {/* Enhanced Secondary Filters (Search, Status, Priority) */}
+        <div className="flex items-center gap-4 flex-wrap bg-[rgb(var(--color-surface))] p-3 rounded-lg border border-[rgb(var(--color-border))]">
+          {/* Text Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-sm rounded-md border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] focus:border-[rgb(var(--color-accent))] focus:outline-none transition-colors"
+            />
+          </div>
+
+          {/* Status Dropdown */}
+          <div className="relative">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none pl-3 pr-8 py-2 text-sm rounded-md border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] hover:border-[rgb(var(--color-accent))] focus:outline-none cursor-pointer"
+            >
+              <option value="all">All Statuses</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Under Review</option>
+              <option value="done">Done</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))] pointer-events-none" />
+          </div>
+
+          {/* Priority Dropdown */}
+          <div className="relative">
+            <select
+              value={priorityFilter}
+              onChange={(e) => {
+                setPriorityFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="appearance-none pl-3 pr-8 py-2 text-sm rounded-md border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] hover:border-[rgb(var(--color-accent))] focus:outline-none cursor-pointer"
+            >
+              <option value="all">All Priorities</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))] pointer-events-none" />
+          </div>
+
+          {/* Items Per Page Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-[rgb(var(--color-text-secondary))]">
+              Show:
+            </span>
+            <div className="relative">
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1); // Reset to first page when changing page size
+                  fetchTasksData(); // Re-fetch immediately
+                }}
+                className="appearance-none pl-3 pr-8 py-2 text-sm rounded-md border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] hover:border-[rgb(var(--color-accent))] focus:outline-none cursor-pointer"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))] pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center gap-4 text-sm">
           <div className="px-3 py-1.5 rounded-md bg-[rgb(var(--color-surface-hover))]">
             <span className="text-[rgb(var(--color-text-tertiary))]">
-              Total:
+              Page Total:
             </span>{" "}
-            <span className="font-medium">{filteredTasks.length}</span>
+            <span className="font-medium">{filteredTasks.length}</span> /{" "}
+            <span className="text-[rgb(var(--color-text-tertiary))]">
+              {totalCount} total queries matches
+            </span>
           </div>
           <div className="px-3 py-1.5 rounded-md bg-[rgb(var(--color-info-light))]">
             <span className="text-[rgb(var(--color-info))]">In Progress:</span>{" "}
@@ -466,23 +634,41 @@ export default function MyTasksPage() {
         <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-lg p-6">
           {viewMode === "kanban" && (
             <KanbanBoard
-              tasks={filteredTasks}
+              tasks={paginatedTasks}
               onTaskClick={handleTaskClick}
               onAddTask={handleAddTask}
+              isRestrictedRole={
+                user?.role === "senior_developer" || user?.role === "employee"
+              }
             />
           )}
 
           {viewMode === "list" && (
-            <ListView tasks={filteredTasks} onTaskClick={handleTaskClick} />
+            <ListView tasks={paginatedTasks} onTaskClick={handleTaskClick} />
           )}
 
           {viewMode === "calendar" && (
-            <CalendarView tasks={filteredTasks} onTaskClick={handleTaskClick} />
+            <CalendarView
+              tasks={paginatedTasks}
+              onTaskClick={handleTaskClick}
+            />
           )}
 
           {viewMode === "timeline" && (
-            <TimelineView tasks={filteredTasks} onTaskClick={handleTaskClick} />
+            <TimelineView
+              tasks={paginatedTasks}
+              onTaskClick={handleTaskClick}
+            />
           )}
+
+          {(viewMode === "kanban" || viewMode === "list") &&
+            filteredTasks.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            )}
         </div>
       </div>
 

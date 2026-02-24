@@ -38,6 +38,7 @@ function mapTask(t: any) {
     creatorName: t.creator?.full_name,
     createdAt: t.created_at || t.createdAt,
     updatedAt: t.updated_at || t.updatedAt,
+    startDate: t.start_date || t.startDate || t.created_at || t.createdAt,
     dueDate: t.deadline || t.dueDate,
     tags: t.tags?.map((tag: any) => tag.name || tag) || [],
     // Map backend subtask shape → frontend SubTask shape

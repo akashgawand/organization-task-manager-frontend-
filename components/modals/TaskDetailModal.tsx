@@ -62,6 +62,10 @@ export default function TaskDetailModal({
 
   const canAddComment = !!user;
 
+  // Roles restricted from marking tasks as 'Done' directly
+  const isRestrictedRole =
+    user?.role === "senior_developer" || user?.role === "employee";
+
   // ── Fetch full task data (with subtasks + comments) from backend on open ────
   useEffect(() => {
     if (!isOpen || !task?.id) return;
@@ -146,23 +150,53 @@ export default function TaskDetailModal({
       const updatedSubtasks = prevSubtasks.map((st) =>
         st.id === subtaskId ? { ...st, isCompleted: !st.isCompleted } : st,
       );
-      setLocalTask({ ...localTask, subtasks: updatedSubtasks });
+
+      // RBAC: If a restricted user completes a subtask while the main task is "todo", auto-upgrade to "in_progress"
+      const newlyCompleted = updatedSubtasks.find(
+        (st) => st.id === subtaskId,
+      )?.isCompleted;
+      const shouldAutoUpgradeStatus =
+        isRestrictedRole && newlyCompleted && localTask.status === "todo";
+      const nextStatus = shouldAutoUpgradeStatus
+        ? "in_progress"
+        : localTask.status;
+
+      setLocalTask({
+        ...localTask,
+        subtasks: updatedSubtasks,
+        status: nextStatus,
+      });
       onSubtaskToggle?.(localTask.id, subtaskId);
+      if (shouldAutoUpgradeStatus) {
+        onStatusChange?.(localTask.id, "in_progress");
+      }
 
       try {
         // Send the full subtask array; backend delete-then-recreates them
-        await taskService.updateTask(localTask.id, {
-          subtasks: updatedSubtasks.map((s) => ({
-            subtask_id: Number(s.id),
-            title: s.title,
-            is_completed: s.isCompleted,
-          })),
-        });
+        const promises: Promise<any>[] = [
+          taskService.updateTask(localTask.id, {
+            subtasks: updatedSubtasks.map((s) => ({
+              subtask_id: Number(s.id),
+              title: s.title,
+              is_completed: s.isCompleted,
+            })),
+          }),
+        ];
+
+        if (shouldAutoUpgradeStatus) {
+          promises.push(
+            taskService.updateTaskStatus(localTask.id, "IN_PROGRESS"),
+          );
+        }
+
+        await Promise.all(promises);
       } catch (err) {
         console.error("Failed to update subtask:", err);
         // Rollback
         setLocalTask((prev) =>
-          prev ? { ...prev, subtasks: prevSubtasks } : prev,
+          prev
+            ? { ...prev, subtasks: prevSubtasks, status: localTask.status }
+            : prev,
         );
       }
     },
@@ -626,7 +660,9 @@ export default function TaskDetailModal({
                   <option value="in_progress">In Progress</option>
                   <option value="review">Under Review</option>
                   <option value="blocked">Blocked</option>
-                  <option value="done">Done</option>
+                  {(!isRestrictedRole || localTask.status === "done") && (
+                    <option value="done">Done</option>
+                  )}
                 </select>
                 {saveError && (
                   <span className="text-xs text-[rgb(var(--color-danger))]">
