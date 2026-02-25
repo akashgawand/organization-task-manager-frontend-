@@ -3,9 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/icons";
+import Image from "next/image";
 import { authService } from "@/app/services/authServices";
-import { UserRole } from "@/types";
 import {
   Eye,
   EyeOff,
@@ -13,8 +12,12 @@ import {
   Lock,
   User,
   ArrowRight,
-  Github,
-  Chrome,
+  Shield,
+  Activity,
+  Users,
+  Briefcase,
+  Layers,
+  BarChart4
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -61,46 +64,102 @@ export default function LoginPage() {
     }
   };
 
-  const toggleMode = () => {
-    setMode(mode === "signin" ? "signup" : "signin");
-    setFormData({ name: "", email: "", password: "" });
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[rgb(var(--color-background))] p-4 relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[rgb(var(--color-accent))] opacity-[0.03] blur-[100px]" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500 opacity-[0.03] blur-[100px]" />
+    <div className="min-h-screen flex selection:bg-[rgb(var(--color-accent))]/30 bg-[rgb(var(--color-background))]">
 
-      <div className="w-full max-w-md bg-[rgb(var(--color-surface))] rounded-2xl shadow-2xl border border-[rgb(var(--color-border))] overflow-hidden relative z-10 animate-fade-in-up">
-        {/* Header */}
-        <div className="p-8 pb-6 text-center">
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center mb-6 hover:scale-105 transition-transform"
-          >
-            <Logo size={48} />
+      {/* Left 70% Showcase Area (Hidden on small screens) */}
+      <div className="hidden lg:flex w-[70%] relative flex-col justify-between overflow-hidden bg-[rgb(var(--color-surface))] border-r border-[rgb(var(--color-border))]">
+
+        {/* Decorative Ambient Background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_60%_70%_at_50%_40%,#000_20%,transparent_100%)] pointer-events-none z-0"></div>
+        <div className="absolute top-[-15%] left-[-10%] w-[50rem] h-[50rem] rounded-full bg-[rgb(var(--color-accent))]/5 mix-blend-screen opacity-50 animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute top-[40%] right-[-10%] w-[40rem] h-[40rem] rounded-full bg-[rgb(var(--color-accent-hover))]/5 mix-blend-screen opacity-30 animate-pulse" style={{ animationDuration: '6s' }} />
+
+        {/* Top Header Logo */}
+        <div className="relative z-10 px-12 pt-10">
+          <Link href="/" className="inline-flex items-center gap-4 group">
+            <div className="relative w-16 h-16 drop-shadow-xl group-hover:scale-105 transition-transform duration-500 ease-out">
+              <Image src="/logo.png" alt="Apex Quants Logo" fill className="object-contain" priority sizes="64px" />
+            </div>
+            <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-[rgb(var(--color-text-primary))] to-[rgb(var(--color-text-secondary))] tracking-tight">
+              ApexQuants
+            </h1>
           </Link>
-          <h1 className="text-2xl font-bold mb-2">
-            {mode === "signin" ? "Welcome back" : "Create an account"}
-          </h1>
-          <p className="text-[rgb(var(--color-text-secondary))] text-sm">
-            {mode === "signin"
-              ? "Enter your credentials to access your workspace"
-              : "Join your team and start managing tasks efficiently"}
+        </div>
+
+        {/* Center Hero Marketing Text */}
+        <div className="relative z-10 px-12 lg:px-20 max-w-5xl mt-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgb(var(--color-accent))]/10 border border-[rgb(var(--color-accent))]/20 mb-6 drop-shadow-sm">
+            <Shield className="w-4 h-4 text-[rgb(var(--color-accent))]" />
+            <span className="text-xs font-bold uppercase tracking-widest text-[rgb(var(--color-accent))]">Institutional-Grade Workflow</span>
+          </div>
+
+          <h2 className="text-5xl xl:text-7xl font-bold text-[rgb(var(--color-text-primary))] leading-[1.1] tracking-tight mb-8 drop-shadow-md">
+            Unify Your Tasks.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[rgb(var(--color-accent))] to-[rgb(var(--color-accent-hover))]">Accelerate Output.</span>
+          </h2>
+
+          <p className="text-lg xl:text-xl text-[rgb(var(--color-text-secondary))] max-w-2xl leading-relaxed font-medium">
+            Elevate organizational productivity with an enterprise-ready project management ecosystem. Align teams, optimize resources, and generate powerful insights in real-time.
           </p>
         </div>
 
-        {/* Form */}
-        <div className="px-8 pb-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Bottom Feature Grid / Floating Cards */}
+        <div className="relative z-10 px-12 lg:px-20 pb-16 mt-16 pb-20">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-6">
+            {[
+              { icon: Layers, title: "Structured Projects", desc: "Organize work intuitively." },
+              { icon: Users, title: "Team Collaboration", desc: "Assign seamlessly." },
+              { icon: BarChart4, title: "Live Analytics", desc: "Track organizational trends." },
+              { icon: Activity, title: "Performance Metrics", desc: "Monitor output daily." }
+            ].map((feature, idx) => (
+              <div key={idx} className="bg-[rgb(var(--color-background))]/60 border border-[rgb(var(--color-border))] rounded-2xl p-5 hover:border-[rgb(var(--color-accent))]/30 transition-colors shadow-xl shadow-[rgb(var(--color-foreground))]/5 group">
+                <div className="w-10 h-10 rounded-xl bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <feature.icon className="w-5 h-5 text-[rgb(var(--color-accent))]" />
+                </div>
+                <h3 className="text-sm font-bold text-[rgb(var(--color-text-primary))] mb-1">{feature.title}</h3>
+                <p className="text-xs text-[rgb(var(--color-text-secondary))]">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right 30% Auth Form Area */}
+      <div className="w-full lg:w-[30%] min-w-[400px] flex flex-col justify-center relative bg-[rgb(var(--color-background))]">
+
+        {/* Mobile Header Logo (Visible only when left side is hidden) */}
+        <div className="lg:hidden absolute top-8 w-full flex justify-center">
+          <Link href="/" className="inline-flex flex-col items-center justify-center group">
+            <div className="relative w-16 h-16 mb-2 drop-shadow-xl">
+              <Image src="/logo.png" alt="Apex Quants Logo" fill className="object-contain" priority sizes="64px" />
+            </div>
+          </Link>
+        </div>
+
+        <div className="w-full max-w-sm mx-auto p-8 animate-in fade-in slide-in-from-right-8 duration-500 delay-150">
+
+          <div className="mb-8">
+            <h2 className="text-3xl font-black text-[rgb(var(--color-text-primary))] tracking-tight mb-2">
+              {mode === "signin" ? "Login" : "Register"}
+            </h2>
+            <p className="text-[rgb(var(--color-text-secondary))] text-sm font-medium">
+              {mode === "signin"
+                ? "Enter your credentials to continue."
+                : "Create an account to start managing tasks."}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {mode === "signup" && (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-[rgb(var(--color-text-secondary))] ml-1">
+                <label className="text-xs font-bold tracking-wide text-[rgb(var(--color-text-secondary))] uppercase ml-1 block">
                   Full Name
                 </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <User className="w-4 h-4 text-[rgb(var(--color-text-tertiary))] group-focus-within:text-[rgb(var(--color-accent))] transition-colors" />
+                  </div>
                   <input
                     type="text"
                     required
@@ -108,7 +167,7 @@ export default function LoginPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="input pl-10"
+                    className="w-full pl-10 pr-4 py-3 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/20 focus:border-[rgb(var(--color-accent))] transition-all duration-200 shadow-sm"
                     placeholder="John Doe"
                   />
                 </div>
@@ -116,11 +175,13 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[rgb(var(--color-text-secondary))] ml-1">
+              <label className="text-xs font-bold tracking-wide text-[rgb(var(--color-text-secondary))] uppercase ml-1 block">
                 Email Address
               </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Mail className="w-4 h-4 text-[rgb(var(--color-text-tertiary))] group-focus-within:text-[rgb(var(--color-accent))] transition-colors" />
+                </div>
                 <input
                   type="email"
                   required
@@ -128,28 +189,20 @@ export default function LoginPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="input pl-10"
+                  className="w-full pl-10 pr-4 py-3 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/20 focus:border-[rgb(var(--color-accent))] transition-all duration-200 shadow-sm"
                   placeholder="name@company.com"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between ml-1">
-                <label className="text-xs font-medium text-[rgb(var(--color-text-secondary))]">
-                  Password
-                </label>
-                {mode === "signin" && (
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs text-[rgb(var(--color-accent))] hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                )}
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
+              <label className="text-xs font-bold tracking-wide text-[rgb(var(--color-text-secondary))] uppercase ml-1 block">
+                Password
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Lock className="w-4 h-4 text-[rgb(var(--color-text-tertiary))] group-focus-within:text-[rgb(var(--color-accent))] transition-colors" />
+                </div>
                 <input
                   type={showPassword ? "text" : "password"}
                   required
@@ -157,13 +210,13 @@ export default function LoginPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className="input pl-10 pr-10"
+                  className="w-full pl-10 pr-12 py-3 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/20 focus:border-[rgb(var(--color-accent))] transition-all duration-200 shadow-sm"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgb(var(--color-text-tertiary))] hover:text-[rgb(var(--color-text-primary))]"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[rgb(var(--color-text-tertiary))] hover:text-[rgb(var(--color-text-primary))] transition-colors focus:outline-none cursor-pointer"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -174,58 +227,41 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn btn-primary w-full group py-2.5 mt-2"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  {mode === "signin" ? "Sign In" : "Create Account"}
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-[rgb(var(--color-border))]" />
-            <span className="text-xs text-[rgb(var(--color-text-tertiary))]">
-              or continue with
-            </span>
-            <div className="h-px flex-1 bg-[rgb(var(--color-border))]" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button className="btn btn-secondary w-full text-xs">
-              <Github className="w-4 h-4 mr-2" />
-              GitHub
-            </button>
-            <button className="btn btn-secondary w-full text-xs">
-              <Chrome className="w-4 h-4 mr-2" />
-              Google
-            </button>
-          </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-[rgb(var(--color-text-secondary))]">
-              {mode === "signin"
-                ? "Don't have an account?"
-                : "Already have an account?"}{" "}
+            <div className="pt-4">
               <button
-                onClick={toggleMode}
-                className="font-medium text-[rgb(var(--color-accent))] hover:underline focus:outline-none"
+                type="submit"
+                disabled={isLoading}
+                className="group relative cursor-pointer w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-[rgb(var(--color-surface))] bg-[rgb(var(--color-foreground))] hover:bg-[rgb(var(--color-foreground))]/90 shadow-lg shadow-[rgb(var(--color-foreground))]/10 active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden shadow-md"
               >
-                {mode === "signin" ? "Sign up" : "Sign in"}
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-[rgb(var(--color-surface))]/30 border-t-[rgb(var(--color-surface))] rounded-full animate-spin relative z-10" />
+                ) : (
+                  <>
+                    <span className="relative z-10 tracking-wide">
+                      {mode === "signin" ? "Sign In Securely" : "Create Account"}
+                    </span>
+                    <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
+                  </>
+                )}
               </button>
-            </p>
-          </div>
+            </div>
+
+            {/* <div className="text-center mt-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode(mode === "signin" ? "signup" : "signin");
+                  setFormData({ name: "", email: "", password: "" });
+                }}
+                className="text-xs font-semibold text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text-primary))] transition-colors focus:outline-none cursor-pointer hover:underline"
+              >
+                {mode === "signin" ? "Don't have an account? Register" : "Already have an account? Sign in"}
+              </button>
+            </div> */}
+          </form>
         </div>
       </div>
-
-    
     </div>
   );
 }

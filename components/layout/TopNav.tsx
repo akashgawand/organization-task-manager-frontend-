@@ -6,25 +6,28 @@ import {
   SunIcon,
   MoonIcon,
 } from "@/components/icons";
-import { Plus, ChevronDown, LogOut } from "lucide-react";
+import { Plus, ChevronDown, LogOut, Settings as SettingsIcon } from "lucide-react";
 import Avatar from "@/components/shared/Avatar";
 import NotificationPanel from "@/components/shared/NotificationPanel";
 import { mockNotifications } from "@/lib/mockData";
 import { authService } from "@/app/services/authServices";
+import Link from "next/link";
 
 export interface TopNavProps {
   user: User;
   onOpenTaskModal?: () => void;
+  isSidebarCollapsed?: boolean;
 }
 
-export default function TopNav({ user, onOpenTaskModal }: TopNavProps) {
+export default function TopNav({ user, onOpenTaskModal, isSidebarCollapsed = false }: TopNavProps) {
   const [isDark, setIsDark] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Sync dark state on mount
   useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
+    const isDarkMode = document.documentElement.classList.contains("dark");
+    setIsDark(isDarkMode);
   }, []);
 
   // Close dropdown when clicking outside
@@ -42,8 +45,16 @@ export default function TopNav({ user, onOpenTaskModal }: TopNavProps) {
   const notifications = mockNotifications.filter((n) => n.userId === user.id);
 
   const toggleDarkMode = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle("dark");
+    const newDark = !isDark;
+    setIsDark(newDark);
+
+    if (newDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.theme = "dark";
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.theme = "light";
+    }
   };
 
   const handleLogout = () => {
@@ -56,7 +67,7 @@ export default function TopNav({ user, onOpenTaskModal }: TopNavProps) {
   };
 
   return (
-    <header className="fixed top-0 right-0 left-0 lg:left-[var(--sidebar-width)] h-[var(--header-height)] bg-[rgb(var(--color-surface))]/80 border-b border-[rgb(var(--color-border))]/60 z-30 px-4 md:px-6 transition-all duration-300">
+    <header className={`fixed top-0 right-0 left-0 ${isSidebarCollapsed ? 'lg:left-[var(--sidebar-collapsed-width)]' : 'lg:left-[var(--sidebar-width)]'} h-[var(--header-height)] bg-[rgb(var(--color-surface))]/80 border-b border-[rgb(var(--color-border))]/60 z-30 px-4 md:px-6 transition-all duration-300`}>
       <div className="flex items-center justify-between h-full max-w-[1600px] mx-auto">
 
         {/* Left — Page Context (empty for now, keeps layout balanced) */}
@@ -104,8 +115,8 @@ export default function TopNav({ user, onOpenTaskModal }: TopNavProps) {
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className={`cursor-pointer flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl transition-all duration-200 ${showUserMenu
-                  ? "bg-[rgb(var(--color-surface-hover))] ring-1 ring-[rgb(var(--color-border))]"
-                  : "hover:bg-[rgb(var(--color-surface-hover))]"
+                ? "bg-[rgb(var(--color-surface-hover))] ring-1 ring-[rgb(var(--color-border))]"
+                : "hover:bg-[rgb(var(--color-surface-hover))]"
                 }`}
             >
               <Avatar name={user.name} avatar={user.avatar} size="sm" />
@@ -147,6 +158,15 @@ export default function TopNav({ user, onOpenTaskModal }: TopNavProps) {
 
                 {/* Actions */}
                 <div className="p-2 border-t border-[rgb(var(--color-border))]/60">
+                  <Link
+                    href="/dashboard/user-settings"
+                    onClick={() => setShowUserMenu(false)}
+                    className="group cursor-pointer flex items-center gap-3 w-full px-4 py-2.5 text-left rounded-xl text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))] transition-all duration-200"
+                  >
+                    <SettingsIcon className="w-4 h-4 group-hover:rotate-45 transition-transform duration-200" />
+                    <span className="text-sm font-medium">User Settings</span>
+                  </Link>
+
                   <button
                     onClick={handleLogout}
                     className="group cursor-pointer flex items-center gap-3 w-full px-4 py-2.5 text-left rounded-xl text-[rgb(var(--color-text-secondary))] hover:bg-red-500/8 hover:text-red-500 transition-all duration-200"
