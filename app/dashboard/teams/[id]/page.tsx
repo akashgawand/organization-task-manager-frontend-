@@ -33,6 +33,7 @@ import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/shared/Avatar";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
@@ -135,8 +136,8 @@ export default function TeamWorkspacePage({
   if (loading) {
     return (
       <DashboardLayout user={user}>
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-[rgb(var(--color-accent))]" />
+        <div className="flex items-center justify-center h-96 min-h-[400px]">
+          <LoadingSpinner size="lg" />
         </div>
       </DashboardLayout>
     );
@@ -263,11 +264,10 @@ export default function TeamWorkspacePage({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 pb-4 text-sm font-medium border-b-2 transition-colors ${
-                    isActive
+                  className={`flex items-center gap-2 pb-4 text-sm font-medium border-b-2 transition-colors ${isActive
                       ? "border-[rgb(var(--color-accent))] text-[rgb(var(--color-accent))]"
                       : "border-transparent text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text-primary))]"
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   {tab.label}
@@ -334,8 +334,8 @@ function OverviewTab({
   const avgProgress =
     projects.length > 0
       ? Math.round(
-          projects.reduce((s, p) => s + (p.progress ?? 0), 0) / projects.length,
-        )
+        projects.reduce((s, p) => s + (p.progress ?? 0), 0) / projects.length,
+      )
       : 0;
 
   return (
@@ -610,13 +610,12 @@ function ProjectsTab({ projects }: { projects: any[] }) {
           <div className="flex justify-between items-start mb-4">
             <h3 className="font-semibold text-lg">{project.name}</h3>
             <span
-              className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                project.status === "completed"
+              className={`px-2 py-1 rounded text-xs font-bold uppercase ${project.status === "completed"
                   ? "bg-green-100 text-green-700"
                   : project.status === "active"
                     ? "bg-blue-100 text-blue-700"
                     : "bg-gray-100 text-gray-700"
-              }`}
+                }`}
             >
               {project.status}
             </span>
@@ -991,16 +990,15 @@ function MemberDetailModal({
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="font-medium flex-1">{task.title}</h4>
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ml-2 ${
-                            task.status === "done" ||
-                            task.status === "completed"
+                          className={`px-2 py-1 rounded text-xs font-medium ml-2 ${task.status === "done" ||
+                              task.status === "completed"
                               ? "bg-green-100 text-green-700"
                               : task.status === "in_progress"
                                 ? "bg-yellow-100 text-yellow-700"
                                 : task.status === "review"
                                   ? "bg-blue-100 text-blue-700"
                                   : "bg-gray-100 text-gray-700"
-                          }`}
+                            }`}
                         >
                           {task.status.replace("_", " ")}
                         </span>
@@ -1013,15 +1011,14 @@ function MemberDetailModal({
                       <div className="flex items-center gap-4 text-xs text-[rgb(var(--color-text-tertiary))]">
                         <div className="flex items-center gap-1">
                           <Flag
-                            className={`w-3 h-3 ${
-                              task.priority === "critical"
+                            className={`w-3 h-3 ${task.priority === "critical"
                                 ? "text-red-500"
                                 : task.priority === "high"
                                   ? "text-orange-500"
                                   : task.priority === "medium"
                                     ? "text-yellow-500"
                                     : "text-gray-400"
-                            }`}
+                              }`}
                           />
                           <span className="capitalize">{task.priority}</span>
                         </div>

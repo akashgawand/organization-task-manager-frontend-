@@ -20,6 +20,7 @@ import {
 } from "@/components/icons";
 import AnalyticsCard from "@/components/analytics/AnalyticsCard";
 import { TaskIcon, ClockIcon, CheckIcon } from "@/components/icons";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 
 export default function EmployeeDashboard() {
   const { user } = useAuth();
@@ -27,7 +28,6 @@ export default function EmployeeDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     async function fetchTasks() {
@@ -60,7 +60,6 @@ export default function EmployeeDashboard() {
   ).length;
 
   const handleTaskClick = (task: Task) => {
-    setSelectedTask(task);
     // In real app, open modal
     console.log("Open task:", task);
   };
@@ -75,11 +74,11 @@ export default function EmployeeDashboard() {
     icon: React.ComponentType;
     label: string;
   }[] = [
-    { mode: "kanban", icon: GridIcon, label: "Board" },
-    { mode: "list", icon: ListIcon, label: "List" },
-    { mode: "calendar", icon: CalendarIcon, label: "Calendar" },
-    { mode: "timeline", icon: TimelineIcon, label: "Timeline" },
-  ];
+      { mode: "kanban", icon: GridIcon, label: "Board" },
+      { mode: "list", icon: ListIcon, label: "List" },
+      { mode: "calendar", icon: CalendarIcon, label: "Calendar" },
+      { mode: "timeline", icon: TimelineIcon, label: "Timeline" },
+    ];
 
   return (
     <DashboardLayout user={user}>
@@ -141,11 +140,9 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* Content */}
-        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-lg p-6">
+        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-lg p-6 min-h-[400px]">
           {isLoading ? (
-            <div className="py-20 flex-center">
-              <div className="w-8 h-8 border-4 border-[rgb(var(--color-accent))] border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <LoadingSpinner size="lg" />
           ) : (
             <>
               {viewMode === "kanban" && (
