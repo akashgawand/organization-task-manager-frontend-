@@ -1,28 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-} from "recharts";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import {
-  mockUsers,
-  mockProjects,
-  mockTeams,
-  mockTasks,
-  mockProductivityMetrics,
-} from "@/lib/mockData";
-import { useAuth } from "@/features/permissions";
-import AnalyticsCard from "@/components/analytics/AnalyticsCard";
+import { useState, useEffect } from "react";
 import {
   ProjectIcon,
   TeamIcon,
@@ -31,21 +9,114 @@ import {
   AnalyticsIcon,
   SettingsIcon,
 } from "@/components/icons";
+import ProductivityTrendChart from "@/components/analytics/ProductivityTrendChart";
+import TaskDistributionChart from "@/components/analytics/TaskDistributionChart";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { User, Project, Team, Task } from "@/types";
+import { userService } from "@/app/services/userServices";
+import { projectService } from "@/app/services/projectServices";
+import { teamService } from "@/app/services/teamServices";
+import { taskService } from "@/app/services/taskServices";
+import {
+  analyticsServices,
+  AnalyticsOverview,
+  TrendDataPoint,
+} from "@/app/services/analyticsServices";
+import { activityService } from "@/app/services/activityServices";
+import { useAuth } from "@/features/permissions";
+import AnalyticsCard from "@/components/analytics/AnalyticsCard";
+
 import Avatar from "@/components/shared/Avatar";
 
 export default function SuperAdminDashboard() {
   const { user } = useAuth();
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("30d");
 
-  const totalUsers = mockUsers.length;
-  const activeUsers = mockUsers.filter((u) => u.isActive).length;
-  const totalProjects = mockProjects.length;
-  const activeProjects = mockProjects.filter(
-    (p) => p.status === "active",
-  ).length;
-  const totalTasks = mockTasks.length;
-  const completedTasks = mockTasks.filter((t) => t.status === "done").length;
-  const completionRate = Math.round((completedTasks / totalTasks) * 100);
+  const [users, setUsers] = useState<User[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
+  const [trend, setTrend] = useState<TrendDataPoint[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        if (!user || user.id === "guest") return;
+
+        const [
+          usersRes,
+          projectsRes,
+          teamsRes,
+          overviewRes,
+          tasksRes,
+          activityRes,
+        ] = await Promise.all([
+          userService.getUsers(),
+          projectService.getProjects(),
+          teamService.getTeams(),
+          analyticsServices.getOverview().catch(() => null),
+          taskService.getTasks(),
+          activityService.getMyActivity().catch(() => ({ data: [] })),
+        ]);
+
+        setUsers(usersRes.data || []);
+
+        const projData = Array.isArray(projectsRes)
+          ? projectsRes
+          : (projectsRes as any)?.projects || [];
+        setProjects(projData);
+
+        setTeams((teamsRes.data as unknown as Team[]) || []);
+        setTasks(tasksRes.data || tasksRes.tasks || []);
+        setOverview(overviewRes as AnalyticsOverview | null);
+        setActivities(activityRes?.data || []);
+      } catch (error) {
+        console.error("Failed to fetch admin data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, [user]);
+
+  // Separate effect for trend that reacts to timeRange changes
+  useEffect(() => {
+    if (!user || user.id === "guest") return;
+    async function fetchTrend() {
+      const end = new Date();
+      const start = new Date();
+      if (timeRange === "7d") start.setDate(end.getDate() - 7);
+      else if (timeRange === "30d") start.setDate(end.getDate() - 30);
+      else if (timeRange === "90d") start.setDate(end.getDate() - 90);
+
+      try {
+        const trendRes = await analyticsServices.getTrend(
+          start.toISOString(),
+          end.toISOString(),
+        );
+        setTrend(trendRes || []);
+      } catch (error) {
+        console.error("Failed to fetch trend", error);
+      }
+    }
+    fetchTrend();
+  }, [user, timeRange]);
+
+  const totalUsers = users.length;
+  const activeUsers = users.filter((u) => u.isActive).length;
+  const totalProjects = projects.length;
+  const activeProjects =
+    overview?.activeProjectsCount ||
+    projects.filter((p) => p.status === "active").length;
+  const totalTasks = tasks.length;
+  const completedTasks =
+    overview?.completedTasksCount ||
+    tasks.filter((t) => t.status === "done").length;
+  const completionRate =
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
     <DashboardLayout user={user}>
@@ -99,7 +170,7 @@ export default function SuperAdminDashboard() {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Productivity Trend — Recharts BarChart */}
+          {/* Productivity Trend — Highcharts Column Chart */}
           <div className="card">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold">Productivity Trend</h3>
@@ -115,56 +186,9 @@ export default function SuperAdminDashboard() {
                 ))}
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart
-                data={mockProductivityMetrics.map((m) => ({
-                  day: m.date.getDate(),
-                  Tasks: m.tasksCompleted,
-                }))}
-                margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
-                barCategoryGap="30%"
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(0,0,0,0.06)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="day"
-                  tick={{
-                    fontSize: 11,
-                    fill: "rgb(var(--color-text-tertiary))",
-                  }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{
-                    fontSize: 11,
-                    fill: "rgb(var(--color-text-tertiary))",
-                  }}
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  cursor={{ fill: "rgba(0,0,0,0.04)" }}
-                  contentStyle={{
-                    borderRadius: 8,
-                    border: "1px solid rgba(0,0,0,0.08)",
-                    fontSize: 12,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  }}
-                  formatter={(v: any) => [`${v} tasks`, "Completed"]}
-                />
-                <Bar
-                  dataKey="Tasks"
-                  fill="rgb(var(--color-accent))"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+
+            <ProductivityTrendChart data={trend} />
+
             <div className="flex items-center justify-center gap-6 mt-4 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[rgb(var(--color-accent))]" />
@@ -175,104 +199,10 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
 
-          {/* Task Distribution — Recharts PieChart */}
+          {/* Task Distribution — Highcharts Pie Chart */}
           <div className="card">
             <h3 className="font-semibold mb-4">Task Distribution by Status</h3>
-            {(() => {
-              const pieData = [
-                {
-                  name: "To Do",
-                  value: mockTasks.filter((t) => t.status === "todo").length,
-                  fill: "#94a3b8",
-                },
-                {
-                  name: "In Progress",
-                  value: mockTasks.filter((t) => t.status === "in_progress")
-                    .length,
-                  fill: "rgb(var(--color-info))",
-                },
-                {
-                  name: "Review",
-                  value: mockTasks.filter((t) => t.status === "review").length,
-                  fill: "rgb(var(--color-warning))",
-                },
-                {
-                  name: "Done",
-                  value: mockTasks.filter((t) => t.status === "done").length,
-                  fill: "rgb(var(--color-success))",
-                },
-                {
-                  name: "Blocked",
-                  value: mockTasks.filter((t) => t.status === "blocked").length,
-                  fill: "rgb(var(--color-danger))",
-                },
-              ].filter((d) => d.value > 0);
-
-              return (
-                <div className="flex flex-col items-center gap-4">
-                  <ResponsiveContainer width="100%" height={180}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={80}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {pieData.map((entry, i) => (
-                          <Cell key={i} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: 8,
-                          border: "1px solid rgba(0,0,0,0.08)",
-                          fontSize: 12,
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        }}
-                        formatter={(v: any, name: any) => [
-                          `${v} (${Math.round((v / totalTasks) * 100)}%)`,
-                          name,
-                        ]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  {/* Legend */}
-                  <div className="w-full space-y-2">
-                    {pieData.map((item) => (
-                      <div key={item.name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full shrink-0"
-                              style={{ backgroundColor: item.fill }}
-                            />
-                            <span className="text-sm font-medium">
-                              {item.name}
-                            </span>
-                          </div>
-                          <span className="text-sm text-[rgb(var(--color-text-secondary))]">
-                            {item.value} (
-                            {Math.round((item.value / totalTasks) * 100)}%)
-                          </span>
-                        </div>
-                        <div className="h-1.5 bg-[rgb(var(--color-border))] rounded-full overflow-hidden">
-                          <div
-                            className="h-full transition-all duration-500"
-                            style={{
-                              width: `${(item.value / totalTasks) * 100}%`,
-                              backgroundColor: item.fill,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
+            <TaskDistributionChart data={overview?.statusDistribution || []} />
           </div>
         </div>
 
@@ -282,64 +212,77 @@ export default function SuperAdminDashboard() {
           <div className="lg:col-span-2 card">
             <h3 className="font-semibold mb-4">Departments & Teams</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {mockTeams.map((team) => {
-                const lead = mockUsers.find((u) => u.id === team.leadId)!;
-                const members = team.memberIds
-                  .map((id) => mockUsers.find((u) => u.id === id))
-                  .filter(Boolean);
-                const teamTasks = mockTasks.filter((t) =>
-                  team.projectIds.includes(t.projectId),
-                );
-                const completedTeamTasks = teamTasks.filter(
-                  (t) => t.status === "done",
-                ).length;
-                const teamCompletionRate =
-                  teamTasks.length > 0
-                    ? Math.round((completedTeamTasks / teamTasks.length) * 100)
-                    : 0;
+              {isLoading ? (
+                <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+                  Loading teams...
+                </p>
+              ) : teams.length === 0 ? (
+                <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+                  No teams found.
+                </p>
+              ) : (
+                teams.map((team) => {
+                  const lead = users.find((u) => u.id === team.leadId) ||
+                    (team as any).lead || { name: "Unassigned" };
+                  const members = (team as any).members || [];
+                  // If the team gives a project list, match it to tasks to calculate completion.
+                  // Alternatively fallback to 0.
+                  const teamTasks = tasks.filter((t) =>
+                    team.projectIds?.includes(t.projectId),
+                  );
+                  const completedTeamTasks = teamTasks.filter(
+                    (t) => t.status === "done",
+                  ).length;
+                  const teamCompletionRate =
+                    teamTasks.length > 0
+                      ? Math.round(
+                          (completedTeamTasks / teamTasks.length) * 100,
+                        )
+                      : 0;
 
-                return (
-                  <div
-                    key={team.id}
-                    className="p-4 rounded-lg bg-[rgb(var(--color-surface-hover))]"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 className="font-semibold mb-1">{team.name}</h4>
-                        <p className="text-xs text-[rgb(var(--color-text-secondary))]">
-                          {members.length} members
-                        </p>
+                  return (
+                    <div
+                      key={team.id}
+                      className="p-4 rounded-lg bg-[rgb(var(--color-surface-hover))]"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold mb-1">{team.name}</h4>
+                          <p className="text-xs text-[rgb(var(--color-text-secondary))]">
+                            {members.length} members
+                          </p>
+                        </div>
+                        <TeamIcon />
                       </div>
-                      <TeamIcon />
+                      <div className="flex items-center gap-2 mb-3">
+                        <Avatar name={lead.name} size="sm" />
+                        <div>
+                          <p className="text-xs text-[rgb(var(--color-text-tertiary))]">
+                            Team Lead
+                          </p>
+                          <p className="text-sm font-medium">{lead.name}</p>
+                        </div>
+                      </div>
+                      <div className="pt-3 border-t border-[rgb(var(--color-border))]">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="text-[rgb(var(--color-text-tertiary))]">
+                            Completion
+                          </span>
+                          <span className="font-medium">
+                            {teamCompletionRate}%
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-[rgb(var(--color-border))] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[rgb(var(--color-success))]"
+                            style={{ width: `${teamCompletionRate}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Avatar name={lead.name} size="sm" />
-                      <div>
-                        <p className="text-xs text-[rgb(var(--color-text-tertiary))]">
-                          Team Lead
-                        </p>
-                        <p className="text-sm font-medium">{lead.name}</p>
-                      </div>
-                    </div>
-                    <div className="pt-3 border-t border-[rgb(var(--color-border))]">
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="text-[rgb(var(--color-text-tertiary))]">
-                          Completion
-                        </span>
-                        <span className="font-medium">
-                          {teamCompletionRate}%
-                        </span>
-                      </div>
-                      <div className="h-1.5 bg-[rgb(var(--color-border))] rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[rgb(var(--color-success))]"
-                          style={{ width: `${teamCompletionRate}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -347,25 +290,31 @@ export default function SuperAdminDashboard() {
           <div className="card">
             <h3 className="font-semibold mb-4">User Management</h3>
             <div className="space-y-3">
-              {mockUsers.slice(0, 6).map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-2 rounded hover:bg-[rgb(var(--color-surface-hover))] transition-smooth"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar name={user.name} avatar={user.avatar} size="sm" />
-                    <div>
-                      <p className="text-sm font-medium">{user.name}</p>
-                      <p className="text-xs text-[rgb(var(--color-text-tertiary))] capitalize">
-                        {user.role.replace("_", " ")}
-                      </p>
-                    </div>
-                  </div>
+              {isLoading ? (
+                <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+                  Loading users...
+                </p>
+              ) : (
+                users.slice(0, 6).map((u) => (
                   <div
-                    className={`w-2 h-2 rounded-full ${user.isActive ? "bg-[rgb(var(--color-success))]" : "bg-[rgb(var(--color-text-tertiary))]"}`}
-                  />
-                </div>
-              ))}
+                    key={u.id}
+                    className="flex items-center justify-between p-2 rounded hover:bg-[rgb(var(--color-surface-hover))] transition-smooth"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar name={u.name} avatar={u.avatar} size="sm" />
+                      <div>
+                        <p className="text-sm font-medium">{u.name}</p>
+                        <p className="text-xs text-[rgb(var(--color-text-tertiary))] capitalize">
+                          {u.role ? u.role.replace("_", " ") : "User"}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-2 h-2 rounded-full ${u.isActive ? "bg-[rgb(var(--color-success))]" : "bg-[rgb(var(--color-text-tertiary))]"}`}
+                    />
+                  </div>
+                ))
+              )}
             </div>
             <button className="btn btn-secondary w-full mt-4">
               View All Users
@@ -377,56 +326,59 @@ export default function SuperAdminDashboard() {
         <div className="card">
           <h3 className="font-semibold mb-4">Recent System Activity</h3>
           <div className="space-y-3">
-            {[
-              {
-                action: "New project created",
-                user: "Michael Chen",
-                time: "2 hours ago",
-                type: "project",
-              },
-              {
-                action: "Team member added",
-                user: "Sarah Johnson",
-                time: "3 hours ago",
-                type: "team",
-              },
-              {
-                action: "Task completed",
-                user: "Emily Rodriguez",
-                time: "5 hours ago",
-                type: "task",
-              },
-              {
-                action: "User permissions updated",
-                user: "Michael Chen",
-                time: "1 day ago",
-                type: "security",
-              },
-            ].map((activity, index) => {
-              const activityUser = mockUsers.find(
-                (u) => u.name === activity.user,
-              )!;
+            {isLoading ? (
+              <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+                Loading activity...
+              </p>
+            ) : activities.length > 0 ? (
+              activities.slice(0, 4).map((activity, index) => {
+                const activityUser = users.find(
+                  (u) =>
+                    u.id === activity.user_id?.toString() ||
+                    u.id === activity.userId,
+                ) || { name: "System User" };
 
-              return (
-                <div
-                  key={index}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-[rgb(var(--color-surface-hover))]"
-                >
-                  <Avatar name={activityUser.name} size="sm" />
-                  <div className="flex-1">
-                    <p className="text-sm">
-                      <span className="font-medium">{activity.user}</span>{" "}
-                      <span className="text-[rgb(var(--color-text-secondary))]">
-                        {activity.action}
-                      </span>
-                    </p>
-                    <p className="text-xs text-[rgb(var(--color-text-tertiary))]">
-                      {activity.time}
-                    </p>
+                // Get display action text
+                const actionText =
+                  activity.description ||
+                  (activity.activity_type
+                    ? activity.activity_type.replace(/_/g, " ").toLowerCase()
+                    : "performed an action");
+
+                return (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 rounded-lg bg-[rgb(var(--color-surface-hover))]"
+                  >
+                    <Avatar name={activityUser.name} size="sm" />
+                    <div className="flex-1">
+                      <p className="text-sm">
+                        <span className="font-medium">{activityUser.name}</span>{" "}
+                        <span className="text-[rgb(var(--color-text-secondary))]">
+                          {actionText}
+                        </span>
+                      </p>
+                      <p className="text-xs text-[rgb(var(--color-text-tertiary))]">
+                        {new Date(
+                          activity.created_at ||
+                            activity.createdAt ||
+                            Date.now(),
+                        ).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+                No recent activity found.
+              </p>
+            )}
           </div>
         </div>
       </div>
