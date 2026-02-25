@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { User, Project, Team, Task } from "@/types";
-import { reviewService, PendingReview } from "@/app/services/reviewServices";
 import { userService } from "@/app/services/userServices";
 import { projectService } from "@/app/services/projectServices";
 import { teamService } from "@/app/services/teamServices";
@@ -27,7 +26,7 @@ import CreateProjectModal from "@/components/modals/CreateProjectModal";
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [selectedTab, setSelectedTab] = useState<
-    "overview" | "projects" | "teams" | "approvals"
+    "overview" | "projects" | "teams"
   >("overview");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -35,9 +34,6 @@ export default function AdminDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [pendingApprovalsList, setPendingApprovalsList] = useState<
-    PendingReview[]
-  >([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -45,14 +41,12 @@ export default function AdminDashboard() {
       try {
         if (!user || user.id === "guest") return;
 
-        const [usersRes, projectsRes, teamsRes, tasksRes, reviewsRes] =
-          await Promise.all([
-            userService.getUsers(),
-            projectService.getProjects(),
-            teamService.getTeams(),
-            taskService.getTasks(),
-            reviewService.getPendingReviews().catch(() => []),
-          ]);
+        const [usersRes, projectsRes, teamsRes, tasksRes] = await Promise.all([
+          userService.getUsers(),
+          projectService.getProjects(),
+          teamService.getTeams(),
+          taskService.getTasks(),
+        ]);
 
         setUsers(usersRes.data || []);
 
@@ -63,7 +57,6 @@ export default function AdminDashboard() {
 
         setTeams((teamsRes.data as unknown as Team[]) || []);
         setTasks(tasksRes.data || (tasksRes as any).tasks || []);
-        setPendingApprovalsList(reviewsRes || []);
       } catch (error) {
         console.error("Failed to fetch admin data", error);
       } finally {
@@ -78,81 +71,14 @@ export default function AdminDashboard() {
     setIsCreateModalOpen(false);
   };
 
-  const handleApprove = async (submissionId: number) => {
-    try {
-      await reviewService.approveSubmission(submissionId, "Approved by Admin");
-      setPendingApprovalsList((prev) =>
-        prev.map((r) =>
-          r.submission_id === submissionId
-            ? {
-                ...r,
-                status: "APPROVED",
-                reviews: [
-                  {
-                    review_id: Date.now(),
-                    is_approved: true,
-                    reviewed_at: new Date().toISOString(),
-                    review_note: "Approved by Admin",
-                    reviewer: {
-                      user_id: user.id as unknown as number,
-                      full_name: user.name,
-                    },
-                  },
-                ],
-              }
-            : r,
-        ),
-      );
-    } catch (error) {
-      console.error("Failed to approve", error);
-    }
-  };
-
-  const handleReject = async (submissionId: number) => {
-    try {
-      await reviewService.rejectSubmission(submissionId, "Rejected by Admin");
-      setPendingApprovalsList((prev) =>
-        prev.map((r) =>
-          r.submission_id === submissionId
-            ? {
-                ...r,
-                status: "SENT_BACK",
-                reviews: [
-                  {
-                    review_id: Date.now(),
-                    is_approved: false,
-                    reviewed_at: new Date().toISOString(),
-                    review_note: "Rejected by Admin",
-                    reviewer: {
-                      user_id: user.id as unknown as number,
-                      full_name: user.name,
-                    },
-                  },
-                ],
-              }
-            : r,
-        ),
-      );
-    } catch (error) {
-      console.error("Failed to reject", error);
-    }
-  };
-
   const activeProjects = projects.filter((p) => p.status === "active").length;
   const totalTeams = teams.length;
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.status === "done").length;
-
-  // We now fetch all submissions (pending and reviewed)
-  const pendingApprovalsCount = pendingApprovalsList.filter(
-    (a) => a.status === "PENDING_REVIEW",
-  ).length;
-
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "projects", label: "Projects" },
     { id: "teams", label: "Teams" },
-    { id: "approvals", label: `Approvals (${pendingApprovalsCount})` },
   ] as const;
 
   return (
@@ -206,12 +132,6 @@ export default function AdminDashboard() {
             icon={<CheckIcon />}
             color="rgb(var(--color-success))"
             trend={{ value: 15, isPositive: true }}
-          />
-          <AnalyticsCard
-            title="Pending Approvals"
-            value={pendingApprovalsCount}
-            icon={<ClockIcon />}
-            color="rgb(var(--color-warning))"
           />
         </div>
 
@@ -444,121 +364,6 @@ export default function AdminDashboard() {
                           <span>{members.length}</span>
                         </div>
                       </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
-
-        {selectedTab === "approvals" && (
-          <div className="card">
-            <h3 className="font-semibold mb-4">Approval Requests & Reviews</h3>
-            <div className="space-y-3">
-              {pendingApprovalsList.length === 0 ? (
-                <p className="text-sm text-[rgb(var(--color-text-secondary))]">
-                  No approval requests or reviews found.
-                </p>
-              ) : (
-                pendingApprovalsList.map((approval) => {
-                  return (
-                    <div
-                      key={approval.submission_id}
-                      className="p-4 rounded-lg border border-[rgb(var(--color-border))]"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            name={approval.submitter?.full_name || "Unknown"}
-                            size="sm"
-                          />
-                          <div>
-                            <p className="font-medium">
-                              {approval.submitter?.full_name || "Unknown User"}
-                            </p>
-                            <p className="text-sm text-[rgb(var(--color-text-secondary))] capitalize">
-                              Task Review
-                            </p>
-                          </div>
-                        </div>
-                        {approval.status === "PENDING_REVIEW" ? (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() =>
-                                handleApprove(approval.submission_id)
-                              }
-                              className="btn btn-sm bg-[rgb(var(--color-success-light))] text-[rgb(var(--color-success))] hover:bg-[rgb(var(--color-success))] hover:text-white"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleReject(approval.submission_id)
-                              }
-                              className="btn btn-sm bg-[rgb(var(--color-danger-light))] text-[rgb(var(--color-danger))] hover:bg-[rgb(var(--color-danger))] hover:text-white"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <span
-                            className={`badge ${approval.status === "APPROVED" ? "badge-success" : "badge-danger"}`}
-                          >
-                            {approval.status.replace("_", " ")}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mt-2 space-y-2">
-                        {approval.task && (
-                          <p className="text-sm font-medium">
-                            Task: {approval.task.title}
-                          </p>
-                        )}
-                        {approval.submission_note && (
-                          <p className="text-sm text-[rgb(var(--color-text-secondary))] bg-[rgb(var(--color-surface))] p-2 rounded border border-[rgb(var(--color-border))]">
-                            <span className="font-medium text-[rgb(var(--color-text-primary))] text-xs uppercase block mb-1">
-                              Submitter Note:
-                            </span>
-                            {approval.submission_note}
-                          </p>
-                        )}
-
-                        {approval.status !== "PENDING_REVIEW" &&
-                          approval.reviews &&
-                          approval.reviews.length > 0 && (
-                            <div
-                              className={`text-sm p-2 rounded border ${
-                                approval.status === "APPROVED"
-                                  ? "bg-[rgb(var(--color-success-light))] border-[rgb(var(--color-success))]"
-                                  : "bg-[rgb(var(--color-danger-light))] border-[rgb(var(--color-danger))]"
-                              }`}
-                            >
-                              <span
-                                className={`font-medium text-xs uppercase block mb-1 ${
-                                  approval.status === "APPROVED"
-                                    ? "text-[rgb(var(--color-success))]"
-                                    : "text-[rgb(var(--color-danger))]"
-                                }`}
-                              >
-                                Review by{" "}
-                                {approval.reviews[0].reviewer.full_name}:
-                              </span>
-                              <span className="text-[rgb(var(--color-text-primary))]">
-                                {approval.reviews[0].review_note ||
-                                  "No review note provided."}
-                              </span>
-                            </div>
-                          )}
-                      </div>
-
-                      <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-3">
-                        Submitted:{" "}
-                        {formatDate(
-                          approval.submitted_at || new Date().toISOString(),
-                        )}
-                      </p>
                     </div>
                   );
                 })
