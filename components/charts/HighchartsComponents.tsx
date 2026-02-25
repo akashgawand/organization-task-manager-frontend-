@@ -257,11 +257,29 @@ export const DonutHighchart = ({
     return <HighchartsReact key={`donut-${themeKey}`} highcharts={Highcharts} options={options} />;
 };
 
-export const UserCompletedTasksChart = ({ data }: { data: { name: string; completed: number }[] }) => {
+import type { TeamWorkloadDataPoint } from "../../app/services/analyticsServices";
+
+export const UserCompletedTasksChart = ({
+    data,
+    dateRangeLabel
+}: {
+    data: TeamWorkloadDataPoint[];
+    dateRangeLabel?: string;
+}) => {
     const themeKey = useThemeColors();
     const commonOptions = getCommonOptions();
 
     const borderRaw = getRawRgb("--color-border");
+
+    // Professional pair combinations for (Assigned, Completed) per user
+    const colorPairs = [
+        { assigned: '#60A5FA', completed: '#34D399' }, // Blue & Green
+        { assigned: '#C084FC', completed: '#F472B6' }, // Purple & Pink
+        { assigned: '#FBBF24', completed: '#F87171' }, // Orange & Red
+        { assigned: '#2DD4BF', completed: '#A3E635' }, // Teal & Lime
+        { assigned: '#94A3B8', completed: '#E879F9' }, // Gray & Fuchsia
+        { assigned: '#38BDF8', completed: '#818CF8' }, // Sky & Indigo
+    ];
 
     const options: Highcharts.Options = {
         ...commonOptions,
@@ -285,8 +303,9 @@ export const UserCompletedTasksChart = ({ data }: { data: { name: string; comple
         },
         yAxis: {
             min: 0,
+            allowDecimals: false,
             title: {
-                text: "Completed Tasks",
+                text: dateRangeLabel || "Task Count",
                 style: { color: getComputedStyleValue("--color-text-tertiary") }
             },
             gridLineColor: `rgba(${borderRaw}, 0.3)`,
@@ -296,34 +315,172 @@ export const UserCompletedTasksChart = ({ data }: { data: { name: string; comple
             },
         },
         legend: {
-            enabled: false
+            enabled: true,
+            itemStyle: { color: getComputedStyleValue("--color-text-secondary"), fontWeight: "normal" }
         },
         plotOptions: {
             column: {
-                colorByPoint: true,
                 pointPadding: 0.1,
-                groupPadding: 0.1,
+                groupPadding: 0.2,
                 borderWidth: 0,
                 borderRadius: 4,
-                colors: ['#C7FE13', '#22D3EE', '#344D12', '#60A5FA', '#FCA5A5', '#FACC15', '#A78BFA', '#FB923C'],
             }
         },
         tooltip: {
-            headerFormat: '<b>{point.x}</b><br/>',
-            pointFormat: 'Completed Tasks: {point.y}',
+            headerFormat: '<b>{point.key}</b><br/>',
+            pointFormat: '<span style="color:{point.color}">\u25CF</span> {series.name}: <b>{point.y}</b><br/>',
             backgroundColor: getComputedStyleValue("--color-surface"),
             borderColor: getComputedStyleValue("--color-border"),
-            style: { color: getComputedStyleValue("--color-text-primary") }
+            style: { color: getComputedStyleValue("--color-text-primary") },
+            shared: true
         },
         series: [
             {
                 type: 'column',
+                name: 'Assigned',
+                // Define individual point data with specific color matching the user index
+                data: data.map((d, i) => ({
+                    y: d.assigned,
+                    color: colorPairs[i % colorPairs.length].assigned
+                })),
+                borderRadius: 4
+            },
+            {
+                type: 'column',
                 name: 'Completed',
-                data: data.map(d => d.completed),
+                // Define individual point data with specific color matching the user index
+                data: data.map((d, i) => ({
+                    y: d.completed,
+                    color: colorPairs[i % colorPairs.length].completed
+                })),
                 borderRadius: 4
             }
         ]
     };
 
     return <HighchartsReact key={`user-completed-${themeKey}`} highcharts={Highcharts} options={options} />;
+};
+
+export const UserPerformanceChart = ({ data }: { data: { date: string; completedTasks: number }[] }) => {
+    const themeKey = useThemeColors();
+    const commonOptions = getCommonOptions();
+
+    const borderRaw = getRawRgb("--color-border");
+    const isDark = typeof window !== "undefined" && document.documentElement.classList.contains("dark");
+
+    const accentColor = isDark ? `rgb(${getRawRgb("--color-accent")})` : "#6366F1";
+    const accentFillTop = isDark ? `rgba(${getRawRgb("--color-accent")}, 0.3)` : "rgba(99, 102, 241, 0.2)";
+
+    const options: Highcharts.Options = {
+        ...commonOptions,
+        chart: {
+            ...commonOptions.chart,
+            type: "areaspline",
+            height: 300,
+            spacing: [20, 0, 10, 0],
+        },
+        xAxis: {
+            categories: data.map((d) => {
+                const date = new Date(d.date);
+                return `${date.getDate()} ${date.toLocaleString("en", { month: "short" })}`;
+            }),
+            lineColor: `rgba(${borderRaw}, 0.5)`,
+            tickColor: `rgba(${borderRaw}, 0.5)`,
+            labels: {
+                style: { color: getComputedStyleValue("--color-text-tertiary") },
+            },
+        },
+        yAxis: {
+            title: { text: undefined },
+            gridLineColor: `rgba(${borderRaw}, 0.3)`,
+            gridLineDashStyle: "Dash",
+            labels: {
+                style: { color: getComputedStyleValue("--color-text-tertiary") },
+            },
+        },
+        plotOptions: {
+            areaspline: {
+                fillOpacity: 0.1,
+                lineWidth: 3,
+                marker: {
+                    enabled: false,
+                    symbol: "circle",
+                    radius: 4,
+                    states: { hover: { enabled: true } },
+                },
+            },
+        },
+        legend: { enabled: false },
+        tooltip: {
+            ...commonOptions.tooltip,
+            pointFormat: "<b>{point.y}</b> Tasks Completed",
+            headerFormat: '<span style="font-size: 10px">{point.key}</span><br/>',
+        },
+        series: [
+            {
+                type: "areaspline",
+                name: "Tasks Completed",
+                data: data.map((d) => d.completedTasks),
+                color: accentColor,
+                fillColor: {
+                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                    stops: [
+                        [0, accentFillTop],
+                        [1, "rgba(99, 102, 241, 0.0)"],
+                    ],
+                },
+            },
+        ],
+    };
+
+    return <HighchartsReact key={`user-perf-${themeKey}`} highcharts={Highcharts} options={options} />;
+};
+
+export const UserTaskDonutChart = ({ statusData }: { statusData: { name: string; value: number }[] }) => {
+    const themeKey = useThemeColors();
+    const commonOptions = getCommonOptions();
+
+    const isDark = typeof window !== "undefined" && !!document.documentElement.classList.contains("dark");
+
+    // Custom tailored colors for user specific breakdown
+    const colorTodo = isDark ? "#475569" : "#94A3B8"; // Slate color for pending
+    const colorInProgress = `rgb(${getRawRgb("--color-info")})`;
+    const colorDone = `rgb(${getRawRgb("--color-success")})`;
+
+    const options: Highcharts.Options = {
+        ...commonOptions,
+        chart: {
+            ...commonOptions.chart,
+            type: "pie",
+            height: 300,
+        },
+        tooltip: {
+            ...commonOptions.tooltip,
+            pointFormat: "<b>{point.y} Tasks</b> ({point.percentage:.0f}%)",
+        },
+        plotOptions: {
+            pie: {
+                innerSize: "75%",
+                borderWidth: isDark ? 2 : 1,
+                borderColor: getComputedStyleValue("--color-surface"),
+                colors: [colorDone, colorInProgress, colorTodo],
+                dataLabels: {
+                    enabled: false,
+                },
+                showInLegend: true,
+            },
+        },
+        series: [
+            {
+                type: "pie",
+                name: "Status",
+                data: statusData.map((d) => ({
+                    name: d.name,
+                    y: d.value,
+                })),
+            },
+        ],
+    };
+
+    return <HighchartsReact key={`user-donut-${themeKey}`} highcharts={Highcharts} options={options} />;
 };

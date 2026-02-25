@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { User, UserRole } from "@/types";
+import RoleSelect from "@/components/shared/RoleSelect";
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface EditUserModalProps {
   user: User | null;
   onSubmit: (id: string, data: Partial<User>) => void;
 }
+
+const modalInputClasses = "w-full px-4 py-2.5 bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/30 focus:border-[rgb(var(--color-accent))] transition-all duration-200";
 
 export default function EditUserModal({
   isOpen,
@@ -38,64 +41,57 @@ export default function EditUserModal({
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/50 ">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold">Edit User</h2>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60  animate-in fade-in duration-200">
+      <div className="bg-[rgb(var(--color-surface))] rounded-2xl shadow-2xl shadow-black/20 w-full max-w-md flex flex-col border border-[rgb(var(--color-border))] animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-[rgb(var(--color-border))] bg-gradient-to-r from-[rgba(var(--color-surface-hover),0.5)] to-transparent rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-[rgb(var(--color-text-primary))]">Edit User</h2>
           <button
             onClick={onClose}
             type="button"
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-xl hover:bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] hover:text-[rgb(var(--color-text-primary))] transition-all duration-200"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">Name</label>
             <input
               type="text"
               value={formData.name || ""}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              className={modalInputClasses}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">Email</label>
             <input
               type="email"
               value={formData.email || ""}
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              className={modalInputClasses}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Role</label>
-            <select
-              value={formData.role || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, role: e.target.value as UserRole })
-              }
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary outline-none bg-white"
-            >
-              <option value="super_admin">Super Admin</option>
-              <option value="admin">Admin</option>
-              <option value="team_lead">Team Lead</option>
-              <option value="senior_developer">Senior Developer</option>
-              <option value="employee">Employee</option>
-            </select>
+            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">Role</label>
+            <RoleSelect
+              value={(formData.role as UserRole) || "employee"}
+              onChange={(role) => setFormData({ ...formData, role })}
+            />
           </div>
 
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))]">
             <input
               type="checkbox"
               id="isActive"
@@ -103,27 +99,28 @@ export default function EditUserModal({
               onChange={(e) =>
                 setFormData({ ...formData, isActive: e.target.checked })
               }
-              className="w-4 h-4 text-primary rounded border-gray-300"
+              className="w-4 h-4 accent-[rgb(var(--color-accent))] rounded"
             />
             <label
               htmlFor="isActive"
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium text-[rgb(var(--color-text-primary))] cursor-pointer"
             >
               Active User
             </label>
           </div>
 
-          <div className="pt-4 flex justify-end gap-3">
+          {/* Actions */}
+          <div className="pt-3 flex justify-end gap-3 border-t border-[rgb(var(--color-border))]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              className="px-4 py-2.5 text-sm font-medium text-[rgb(var(--color-text-secondary))] bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))] transition-all duration-200"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              className="px-5 py-2.5 text-sm font-semibold text-white bg-[rgb(var(--color-accent))] rounded-xl hover:bg-[rgb(var(--color-accent))]/90 shadow-sm shadow-[rgb(var(--color-accent))]/20 hover:shadow-md active:scale-[0.97] transition-all duration-200"
             >
               Save Changes
             </button>
