@@ -20,6 +20,7 @@ export default function DashboardLayout({
   user,
 }: DashboardLayoutProps) {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const handleCreateTask = async (data: any) => {
     await taskService.createTask(data);
@@ -27,10 +28,18 @@ export default function DashboardLayout({
   };
   return (
     <div className="min-h-screen bg-[rgb(var(--color-background))]">
-      <Sidebar userRole={user.role} />
-      <TopNav user={user} onOpenTaskModal={() => setIsTaskModalOpen(true)} />
+      <Sidebar
+        userRole={user.role}
+        isCollapsed={isSidebarCollapsed}
+        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
+      <TopNav
+        user={user}
+        onOpenTaskModal={() => setIsTaskModalOpen(true)}
+        isSidebarCollapsed={isSidebarCollapsed}
+      />
 
-      <main className="lg:ml-[var(--sidebar-width)] mt-[var(--header-height)] p-6">
+      <main className={`mt-[var(--header-height)] p-6 transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-[var(--sidebar-collapsed-width)]' : 'lg:ml-[var(--sidebar-width)]'}`}>
         {children}
       </main>
 

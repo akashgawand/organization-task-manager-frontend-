@@ -10,8 +10,8 @@ export const userService = {
     // Handle all shapes:
     const rows: any[] =
       Array.isArray(response) ? response              // already a flat array
-      : Array.isArray(response?.data) ? response.data  // { data: [...], pagination }
-      : [];                                             // fallback
+        : Array.isArray(response?.data) ? response.data  // { data: [...], pagination }
+          : [];                                             // fallback
     return {
       data: rows.map((u: any) => ({
         id: String(u.user_id),
@@ -27,7 +27,11 @@ export const userService = {
   },
 
   async getUserById(id: string) {
-    const data = await api.get(`/users/${id}`);
+    const response = await api.get(`/users/${id}`);
+
+    // api.ts typically returns the full response object, so we look inside response.data
+    const data = response?.data || response;
+
     if (data) {
       return {
         id: String(data.user_id),
@@ -59,7 +63,7 @@ export const userService = {
     if (data.email) payload.email = data.email;
     if (data.role) payload.role = data.role.toUpperCase();
     if (data.isActive !== undefined) payload.is_active = data.isActive;
-    
+
     const response = await api.put(`/users/${id}`, payload);
     return response;
   },
@@ -68,4 +72,26 @@ export const userService = {
     const response = await api.delete(`/users/${id}`);
     return response;
   },
+
+  async updateOwnProfile(data: { name: string; email: string; phone?: string }) {
+    const payload: any = {};
+    if (data.name) payload.full_name = data.name;
+    if (data.email) payload.email = data.email;
+    if (data.phone) payload.phone = data.phone;
+
+    // PATCH /api/v1/users/profile
+    const response = await api.patch(`/users/profile`, payload);
+    return response;
+  },
+
+  async updateOwnPassword(data: { currentPassword: string; newPassword: string }) {
+    const payload = {
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword,
+    };
+
+    // PATCH /api/v1/users/password
+    const response = await api.patch(`/users/password`, payload);
+    return response;
+  }
 };

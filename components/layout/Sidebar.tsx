@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -19,6 +18,8 @@ import {
 
 interface SidebarProps {
   userRole: UserRole;
+  isCollapsed: boolean;
+  onToggle: () => void;
 }
 
 interface NavItem {
@@ -97,8 +98,7 @@ const navItems: NavItem[] = [
   },
 ];
 
-export default function Sidebar({ userRole }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export default function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
 
   const filteredNavItems = navItems.filter((item) =>
@@ -128,7 +128,7 @@ export default function Sidebar({ userRole }: SidebarProps) {
           </div>
         )}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={onToggle}
           className="btn btn-ghost p-2 -mr-2"
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >

@@ -16,17 +16,27 @@ export function useAuth() {
     setIsMounted(true);
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
+
+    const handleUserUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setUser(customEvent.detail);
+    };
+
+    window.addEventListener('userUpdated', handleUserUpdate);
+    return () => {
+      window.removeEventListener('userUpdated', handleUserUpdate);
+    };
   }, []);
 
   const userTeams = useMemo(() => {
     if (!user) return [];
-    
+
     // Attempt to map real user to mock user to reuse mock team logic
     // Real user has email. Mock users have email.
     const mockUser = mockUsers.find(u => u.email === user.email);
     const mockId = mockUser ? mockUser.id : user.id;
 
-    return mockTeams.filter(t => 
+    return mockTeams.filter(t =>
       t.memberIds.includes(mockId) || t.leadId === mockId
     );
   }, [user]);
@@ -44,8 +54,17 @@ export function useAuth() {
 
   // Prevent hydration mismatch by returning default until mounted
   if (!isMounted) {
-     const mockRoleUser = mockUsers.find(u => u.role === 'admin') || mockUsers[0];
-     return { user: mockRoleUser, userTeams: [] };
+    return {
+      user: {
+        id: '',
+        name: '',
+        email: '',
+        role: 'employee',
+        isActive: false,
+        createdAt: new Date()
+      } as User,
+      userTeams: []
+    };
   }
 
   return { user: safeUser, userTeams };

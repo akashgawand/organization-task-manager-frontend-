@@ -10,7 +10,7 @@ interface LoginResponse {
 export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
     const data = await api.post("/auth/login", { email, password });
-    
+
     // Map backend user to frontend user
     const user: User = {
       id: String(data.user.user_id),
@@ -33,6 +33,20 @@ export const authService = {
 
   async register(name: string, email: string, password: string) {
     return api.post("/auth/register", { full_name: name, email, password });
+  },
+
+  updateCurrentUser(data: Partial<User>) {
+    if (typeof window !== "undefined") {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        let user = JSON.parse(userStr);
+        user = { ...user, ...data };
+        localStorage.setItem("user", JSON.stringify(user));
+
+        // Broadcast custom event so other components (like useAuth/TopNav) can update
+        window.dispatchEvent(new CustomEvent('userUpdated', { detail: user }));
+      }
+    }
   },
 
   logout() {
