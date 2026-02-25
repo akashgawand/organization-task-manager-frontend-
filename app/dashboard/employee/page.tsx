@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import KanbanBoard from "@/components/views/KanbanBoard";
-import { getTasksByAssignee } from "@/lib/mockData";
+import {
+  KanbanBoard,
+  ListView,
+  CalendarView,
+  TimelineView,
+} from "@/features/tasks";
+import { taskService } from "@/app/services/taskServices";
 import { useAuth } from "@/features/permissions";
 import { Task, TaskStatus, ViewMode } from "@/types";
 import {
@@ -18,10 +23,31 @@ import { TaskIcon, ClockIcon, CheckIcon } from "@/components/icons";
 
 export default function EmployeeDashboard() {
   const { user } = useAuth();
-  const userTasks = getTasksByAssignee(user.id);
+  const [userTasks, setUserTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  useEffect(() => {
+    async function fetchTasks() {
+      try {
+        if (!user || user.id === "guest") {
+          setIsLoading(false);
+          return;
+        }
+        const tasksResponse = await taskService.getTasks();
+        // Assuming the backend handles filtering by token, or we filter locally if needed
+        const tasks = tasksResponse.data || [];
+        setUserTasks(tasks);
+      } catch (error) {
+        console.error("Failed to fetch tasks", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchTasks();
+  }, [user]);
 
   // Calculate metrics
   const totalTasks = userTasks.length;
@@ -116,33 +142,30 @@ export default function EmployeeDashboard() {
 
         {/* Content */}
         <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-lg p-6">
-          {viewMode === "kanban" && (
-            <KanbanBoard
-              tasks={userTasks}
-              onTaskClick={handleTaskClick}
-              onAddTask={handleAddTask}
-            />
-          )}
-
-          {viewMode === "list" && (
-            <div className="text-center py-16 text-[rgb(var(--color-text-tertiary))]">
-              <ListIcon />
-              <p className="mt-4">List view - Coming soon</p>
+          {isLoading ? (
+            <div className="py-20 flex-center">
+              <div className="w-8 h-8 border-4 border-[rgb(var(--color-accent))] border-t-transparent rounded-full animate-spin"></div>
             </div>
-          )}
-
-          {viewMode === "calendar" && (
-            <div className="text-center py-16 text-[rgb(var(--color-text-tertiary))]">
-              <CalendarIcon />
-              <p className="mt-4">Calendar view - Coming soon</p>
-            </div>
-          )}
-
-          {viewMode === "timeline" && (
-            <div className="text-center py-16 text-[rgb(var(--color-text-tertiary))]">
-              <TimelineIcon />
-              <p className="mt-4">Timeline view - Coming soon</p>
-            </div>
+          ) : (
+            <>
+              {viewMode === "kanban" && (
+                <KanbanBoard
+                  tasks={userTasks}
+                  onTaskClick={handleTaskClick}
+                  onAddTask={handleAddTask}
+                  isRestrictedRole={true}
+                />
+              )}
+              {viewMode === "list" && (
+                <ListView tasks={userTasks} onTaskClick={handleTaskClick} />
+              )}
+              {viewMode === "calendar" && (
+                <CalendarView tasks={userTasks} onTaskClick={handleTaskClick} />
+              )}
+              {viewMode === "timeline" && (
+                <TimelineView tasks={userTasks} onTaskClick={handleTaskClick} />
+              )}
+            </>
           )}
         </div>
       </div>

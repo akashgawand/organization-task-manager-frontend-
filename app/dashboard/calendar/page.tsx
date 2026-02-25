@@ -131,19 +131,26 @@ export default function CalendarPage() {
   const completionRate =
     tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
-  const filters: {
+  let filters: {
     id: CalendarFilter;
     label: string;
     icon?: React.ReactNode;
-  }[] = [
-    { id: "my-tasks", label: "My Tasks" },
-    { id: "all-tasks", label: "All Tasks" },
-    {
+  }[] = [{ id: "my-tasks", label: "My Tasks" }];
+
+  if (user?.role === "super_admin" || user?.role === "admin") {
+    filters.push({ id: "all-tasks", label: "All Tasks" });
+    filters.push({
       id: "team-tasks",
       label: "Team Tasks",
       icon: <Users className="w-4 h-4" />,
-    },
-  ];
+    });
+  } else if (user?.role === "team_lead") {
+    filters.push({
+      id: "team-tasks",
+      label: "Team Tasks",
+      icon: <Users className="w-4 h-4" />,
+    });
+  }
 
   return (
     <DashboardLayout user={user}>

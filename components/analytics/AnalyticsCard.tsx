@@ -19,10 +19,17 @@ export default function AnalyticsCard({
   color,
 }: AnalyticsCardProps) {
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-4">
+    <div className="card group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] cursor-default">
+      {/* Subtle background glow effect on hover */}
+      <div
+        className="absolute -right-6 -top-6 w-32 h-32 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-500 blur-2xl pointer-events-none"
+        style={{ backgroundColor: color || "rgb(var(--color-accent))" }}
+      />
+
+      <div className="flex items-start justify-between mb-6 relative z-10">
+        {/* Icon Container */}
         <div
-          className="w-12 h-12 flex-center rounded-lg"
+          className="w-12 h-12 flex-center rounded-xl transition-transform duration-300 group-hover:scale-110 shadow-sm border border-[rgb(var(--color-border-light))]"
           style={{
             backgroundColor: color
               ? `${color}15`
@@ -32,16 +39,32 @@ export default function AnalyticsCard({
         >
           {icon}
         </div>
+
+        {/* Trend Pill Badge */}
         {trend && (
           <div
-            className={`text-sm font-medium ${trend.isPositive ? "text-[rgb(var(--color-success))]" : "text-[rgb(var(--color-danger))]"}`}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors
+              ${
+                trend.isPositive
+                  ? "bg-[rgb(var(--color-success-light))] text-[rgb(var(--color-success))]"
+                  : "bg-[rgb(var(--color-danger-light))] text-[rgb(var(--color-danger))]"
+              }`}
           >
-            {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
+            <span className="text-[10px]">{trend.isPositive ? "↗" : "↘"}</span>
+            <span>{Math.abs(trend.value)}%</span>
           </div>
         )}
       </div>
-      <h3 className="text-2xl font-bold mb-1">{value}</h3>
-      <p className="text-sm text-[rgb(var(--color-text-secondary))]">{title}</p>
+
+      {/* Typography */}
+      <div className="relative z-10">
+        <h3 className="text-3xl font-extrabold tracking-tight mb-1 text-[rgb(var(--color-text-primary))] transition-colors duration-300">
+          {value}
+        </h3>
+        <p className="text-sm font-medium text-[rgb(var(--color-text-secondary))]">
+          {title}
+        </p>
+      </div>
     </div>
   );
 }

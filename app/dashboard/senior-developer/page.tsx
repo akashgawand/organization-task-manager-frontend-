@@ -52,10 +52,10 @@ export default function SeniorDeveloperDashboard() {
     async function fetchTasks() {
       if (!selectedProject) return;
       try {
-        const tasks = await taskService.getTasks({
+        const tasksResp = await taskService.getTasks({
           project_id: selectedProject,
         });
-        setProjectTasks(tasks.tasks || tasks || []);
+        setProjectTasks(tasksResp.data || tasksResp.tasks || []);
       } catch (error) {
         console.error("Failed to fetch tasks", error);
       }
@@ -152,13 +152,13 @@ export default function SeniorDeveloperDashboard() {
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-semibold">{project.name}</h4>
                       <span className="text-sm text-[rgb(var(--color-text-secondary))]">
-                        {project.progress}%
+                        {project.progress || 0}%
                       </span>
                     </div>
                     <div className="h-2 bg-[rgb(var(--color-border))] rounded-full overflow-hidden mb-3">
                       <div
                         className="h-full bg-[rgb(var(--color-accent))] transition-all"
-                        style={{ width: `${project.progress}%` }}
+                        style={{ width: `${project.progress || 0}%` }}
                       />
                     </div>
                     <p className="text-sm text-[rgb(var(--color-text-secondary))] line-clamp-1">
@@ -192,7 +192,7 @@ export default function SeniorDeveloperDashboard() {
                 : "All Tasks"}
             </h3>
             <button
-              onClick={() => setSelectedProject(undefined as any)}
+              onClick={() => setSelectedProject(undefined)}
               className="btn btn-secondary btn-sm"
             >
               View All Tasks
