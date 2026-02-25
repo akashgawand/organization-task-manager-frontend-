@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Briefcase,
-  ListTodo
+  ListTodo,
+  BarChart3,
 } from "lucide-react";
 
 export default function AnalyticsPage() {
@@ -95,13 +96,18 @@ export default function AnalyticsPage() {
         <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-[rgb(var(--color-text-primary))]">
-                Analytics Overview
-              </h1>
-              <p className="text-[rgb(var(--color-text-secondary))] mt-1">
-                High-level operational metrics and team performance
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[rgb(var(--color-accent))] to-[rgb(var(--color-accent))]/70 flex items-center justify-center shadow-lg shadow-[rgb(var(--color-accent))]/20">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-[rgb(var(--color-text-primary))]">
+                  Analytics Overview
+                </h1>
+                <p className="text-sm text-[rgb(var(--color-text-tertiary))] mt-0.5">
+                  High-level operational metrics and team performance
+                </p>
+              </div>
             </div>
             {/* <div className="flex items-center gap-2 text-sm text-[rgb(var(--color-success))] bg-[rgb(var(--color-success-light))] px-3 py-1.5 rounded-full font-medium shadow-sm border border-[rgba(var(--color-success),0.2)]">
               <TrendingUp className="w-4 h-4" />

@@ -20,6 +20,8 @@ import {
   Edit,
   Save,
   Loader2,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { mockUsers } from "@/lib/mockData";
 import Avatar from "@/components/shared/Avatar";
@@ -31,6 +33,7 @@ import {
 } from "@/app/services/settingsServices";
 import { userService } from "@/app/services/userServices";
 import { teamService, mapTeam } from "@/app/services/teamServices";
+import LeadSelect from "@/components/shared/LeadSelect";
 import { useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { User } from "@/types";
@@ -117,13 +120,18 @@ export default function SettingsPage() {
     <DashboardLayout user={user}>
       <div className="max-w-7xl mx-auto pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-[rgb(var(--color-text-primary))] mb-1">
-            Settings
-          </h1>
-          <p className="text-[rgb(var(--color-text-secondary))]">
-            Manage your workspace settings and preferences
-          </p>
+        <div className="mb-8 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[rgb(var(--color-accent))] to-[rgb(var(--color-accent))]/70 flex items-center justify-center shadow-lg shadow-[rgb(var(--color-accent))]/20">
+            <SettingsIcon className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-[rgb(var(--color-text-primary))]">
+              Settings
+            </h1>
+            <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+              Manage your workspace settings and preferences
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
@@ -334,6 +342,7 @@ function UserManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [isAddingUser, setIsAddingUser] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -364,10 +373,10 @@ function UserManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
       await userService.deleteUser(id);
       toast.success("User deleted successfully");
+      setDeletingUserId(null);
       fetchUsers();
     } catch (error) {
       toast.error("Failed to delete user");
@@ -400,7 +409,7 @@ function UserManagement() {
       <SettingsCard>
         <CardHeader title="User Management">
           <button
-            className="btn btn-primary"
+            className="cursor-pointer btn btn-primary"
             onClick={() => setIsAddingUser(true)}
           >
             <Plus className="w-4 h-4" />
@@ -433,7 +442,7 @@ function UserManagement() {
                 <tr className="text-left text-[11px] font-semibold text-[rgb(var(--color-text-tertiary))] uppercase tracking-wider border-b border-[rgb(var(--color-border))] bg-[rgba(var(--color-surface-hover),0.5)]">
                   <th className="px-6 py-3">User</th>
                   <th className="px-6 py-3">Role</th>
-                  <th className="px-6 py-3">Department</th>
+                  {/* <th className="px-6 py-3">Department</th> */}
                   <th className="px-6 py-3">Status</th>
                   <th className="px-6 py-3">Actions</th>
                 </tr>
@@ -457,13 +466,25 @@ function UserManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2.5 py-1 text-[11px] font-semibold rounded-full bg-[rgba(var(--color-accent),0.1)] text-[rgb(var(--color-accent))] border border-[rgba(var(--color-accent),0.15)] capitalize">
-                        {(user.role || "").replace(/_/g, " ")}
-                      </span>
+                      {(() => {
+                        const roleColors: Record<string, string> = {
+                          super_admin: "bg-red-500/10 text-red-500 border-red-500/20",
+                          admin: "bg-violet-500/10 text-violet-500 border-violet-500/20",
+                          team_lead: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+                          senior_developer: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
+                          employee: "bg-[rgba(var(--color-accent),0.1)] text-[rgb(var(--color-accent))] border-[rgba(var(--color-accent),0.15)]",
+                        };
+                        const cls = roleColors[user.role] || roleColors.employee;
+                        return (
+                          <span className={`px-2.5 py-1 text-[11px] font-semibold rounded-full border capitalize ${cls}`}>
+                            {(user.role || "").replace(/_/g, " ")}
+                          </span>
+                        );
+                      })()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[rgb(var(--color-text-secondary))]">
+                    {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-[rgb(var(--color-text-secondary))]">
                       {user.department || "N/A"}
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2.5 py-1 text-[11px] font-semibold rounded-full border ${user.isActive
@@ -483,7 +504,7 @@ function UserManagement() {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(user.id)}
+                          onClick={() => setDeletingUserId(user.id)}
                           className="p-2 rounded-lg hover:bg-red-500/10 text-[rgb(var(--color-text-tertiary))] hover:text-red-500 transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -510,6 +531,39 @@ function UserManagement() {
         onClose={() => setIsAddingUser(false)}
         onSubmit={handleAddSubmit}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deletingUserId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
+          <div className="bg-[rgb(var(--color-surface))] rounded-2xl shadow-2xl shadow-black/20 w-full max-w-sm border border-[rgb(var(--color-border))] animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 overflow-hidden">
+            <div className="p-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-7 h-7 text-red-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-[rgb(var(--color-text-primary))] mb-2">
+                Delete User
+              </h3>
+              <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+                Are you sure you want to delete this user? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-3 p-4 border-t border-[rgb(var(--color-border))] bg-[rgba(var(--color-surface-hover),0.3)]">
+              <button
+                onClick={() => setDeletingUserId(null)}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-[rgb(var(--color-text-secondary))] bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl hover:bg-[rgb(var(--color-surface-hover))] transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deletingUserId)}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 shadow-sm shadow-red-500/20 active:scale-[0.97] transition-all duration-200"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -517,27 +571,89 @@ function UserManagement() {
 // Team Management Tab
 function TeamManagement() {
   const [teams, setTeams] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<any | null>(null);
+  const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null);
+
+  const fetchTeams = async () => {
+    try {
+      const response = await teamService.getTeams();
+      if (response && response.data) setTeams(response.data);
+    } catch (e) {
+      console.error("Failed to load teams", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await userService.getUsers();
+      if (response && response.data) setAllUsers(response.data);
+    } catch (e) {
+      console.error("Failed to load users", e);
+    }
+  };
 
   useEffect(() => {
-    const fetchTeams = async () => {
-      try {
-        const response = await teamService.getTeams();
-        if (response && response.data) setTeams(response.data);
-      } catch (e) {
-        console.error("Failed to load teams", e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchTeams();
+    fetchUsers();
   }, []);
+
+  const handleCreate = async (data: { name: string; description: string; lead_id: number }) => {
+    try {
+      const created = await teamService.createTeam(data);
+      if (created) {
+        toast.success("Team created successfully");
+        setShowCreateModal(false);
+        fetchTeams();
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to create team");
+    }
+  };
+
+  const handleUpdate = async (id: string, data: { name?: string; description?: string; status?: string }) => {
+    try {
+      const updated = await teamService.updateTeam(id, data);
+      if (updated) {
+        toast.success("Team updated successfully");
+        setEditingTeam(null);
+        fetchTeams();
+      }
+    } catch (error) {
+      toast.error("Failed to update team");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await teamService.deleteTeam(id);
+      toast.success("Team deleted successfully");
+      setDeletingTeamId(null);
+      fetchTeams();
+    } catch (error) {
+      toast.error("Failed to delete team");
+    }
+  };
+
+  // Color palette for team cards
+  const teamColors = [
+    { bg: "bg-violet-500/10", icon: "text-violet-500", border: "border-violet-500/20" },
+    { bg: "bg-cyan-500/10", icon: "text-cyan-500", border: "border-cyan-500/20" },
+    { bg: "bg-amber-500/10", icon: "text-amber-500", border: "border-amber-500/20" },
+    { bg: "bg-rose-500/10", icon: "text-rose-500", border: "border-rose-500/20" },
+    { bg: "bg-emerald-500/10", icon: "text-emerald-500", border: "border-emerald-500/20" },
+    { bg: "bg-blue-500/10", icon: "text-blue-500", border: "border-blue-500/20" },
+  ];
 
   return (
     <div className="space-y-6">
       <SettingsCard>
         <CardHeader title="Team Management">
-          <button className="btn btn-primary">
+          <button className="cursor-pointer btn btn-primary" onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4" />
             Create Team
           </button>
@@ -555,48 +671,277 @@ function TeamManagement() {
               <p className="text-sm mt-1">Create your first team to get started.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {teams.map((team, i) => (
-                <div
-                  key={team.id || i}
-                  className="border border-[rgb(var(--color-border))] rounded-xl p-4 hover:border-[rgb(var(--color-border-hover))] hover:shadow-sm transition-all duration-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-[rgb(var(--color-text-primary))]">
-                        {team.name}
-                      </h3>
-                      <div className="flex items-center gap-4 text-sm text-[rgb(var(--color-text-secondary))] mt-1.5">
-                        <span className="flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5" />
-                          {team.memberCount || team.members?.length || 0} members
-                        </span>
-                        <span>
-                          {team.projectCount || team.projects?.length || 0} projects
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize border ${team.status === "active"
-                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                            : "bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] border-[rgb(var(--color-border))]"
-                            }`}
-                        >
-                          {team.status || "Active"}
-                        </span>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {teams.map((team, i) => {
+                const color = teamColors[i % teamColors.length];
+                return (
+                  <div
+                    key={team.id || i}
+                    className="group border border-[rgb(var(--color-border))] rounded-2xl p-5 hover:border-[rgb(var(--color-border-hover))] hover:shadow-md transition-all duration-300 bg-[rgb(var(--color-surface))]"
+                  >
+                    {/* Top row */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl ${color.bg} ${color.border} border flex items-center justify-center`}>
+                          <UsersRound className={`w-5 h-5 ${color.icon}`} />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-[rgb(var(--color-text-primary))] leading-tight">
+                            {team.name}
+                          </h3>
+                          {team.description && (
+                            <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-0.5 line-clamp-1">
+                              {team.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${team.status === "active"
+                          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                          : "bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] border-[rgb(var(--color-border))]"
+                          }`}
+                      >
+                        {team.status || "Active"}
+                      </span>
+                    </div>
+
+                    {/* Lead */}
+                    {team.lead && (
+                      <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))]">
+                        <Avatar name={team.lead.name} avatar={team.lead.avatar} size="sm" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-[rgb(var(--color-text-primary))] truncate">{team.lead.name}</p>
+                          <p className="text-[10px] text-[rgb(var(--color-text-tertiary))]">Team Lead</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Metrics */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex items-center gap-1.5 text-xs text-[rgb(var(--color-text-secondary))]">
+                        <Users className="w-3.5 h-3.5" />
+                        <span className="font-medium">{team.memberCount || team.members?.length || 0}</span>
+                        <span className="text-[rgb(var(--color-text-tertiary))]">members</span>
+                      </div>
+                      <div className="w-px h-3 bg-[rgb(var(--color-border))]" />
+                      <div className="flex items-center gap-1.5 text-xs text-[rgb(var(--color-text-secondary))]">
+                        <span className="font-medium">{team.projectCount || team.projects?.length || 0}</span>
+                        <span className="text-[rgb(var(--color-text-tertiary))]">projects</span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button className="btn btn-secondary btn-sm">
-                        <Edit className="w-4 h-4" />
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-3 border-t border-[rgb(var(--color-border))]">
+                      <button
+                        onClick={() => setEditingTeam(team)}
+                        className="cursor-pointer flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))] transition-all"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
                         Edit
+                      </button>
+                      <button
+                        onClick={() => setDeletingTeamId(team.id)}
+                        className="cursor-pointer flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg text-[rgb(var(--color-text-secondary))] hover:bg-red-500/10 hover:text-red-500 transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
                       </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </SettingsCard>
+
+      {/* Create Team Modal */}
+      {showCreateModal && (
+        <TeamFormModal
+          title="Create Team"
+          submitLabel="Create Team"
+          users={allUsers}
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={(data) => handleCreate(data)}
+        />
+      )}
+
+      {/* Edit Team Modal */}
+      {editingTeam && (
+        <TeamFormModal
+          title="Edit Team"
+          submitLabel="Save Changes"
+          team={editingTeam}
+          users={allUsers}
+          onClose={() => setEditingTeam(null)}
+          onSubmit={(data) => handleUpdate(editingTeam.id, data)}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      {deletingTeamId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
+          <div className="bg-[rgb(var(--color-surface))] rounded-2xl shadow-2xl shadow-black/20 w-full max-w-sm border border-[rgb(var(--color-border))] animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 overflow-hidden">
+            <div className="p-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-7 h-7 text-red-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-[rgb(var(--color-text-primary))] mb-2">
+                Delete Team
+              </h3>
+              <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+                Are you sure you want to delete this team? All team data will be permanently removed.
+              </p>
+            </div>
+            <div className="flex gap-3 p-4 border-t border-[rgb(var(--color-border))] bg-[rgba(var(--color-surface-hover),0.3)]">
+              <button
+                onClick={() => setDeletingTeamId(null)}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-[rgb(var(--color-text-secondary))] bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl hover:bg-[rgb(var(--color-surface-hover))] transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deletingTeamId)}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 shadow-sm shadow-red-500/20 active:scale-[0.97] transition-all duration-200"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Reusable Team Form Modal (Create & Edit)
+function TeamFormModal({
+  title,
+  submitLabel,
+  team,
+  users,
+  onClose,
+  onSubmit,
+}: {
+  title: string;
+  submitLabel: string;
+  team?: any;
+  users: any[];
+  onClose: () => void;
+  onSubmit: (data: any) => void;
+}) {
+  const [name, setName] = useState(team?.name || "");
+  const [description, setDescription] = useState(team?.description || "");
+  const [leadId, setLeadId] = useState(team?.leadId || "");
+  const [status, setStatus] = useState(team?.status?.toUpperCase() || "ACTIVE");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const data: any = { name, description };
+      if (leadId) data.lead_id = Number(leadId);
+      if (team) data.status = status;
+      await onSubmit(data);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const formInput = "w-full px-4 py-2.5 bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/30 focus:border-[rgb(var(--color-accent))] transition-all duration-200";
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
+      <div className="bg-[rgb(var(--color-surface))] rounded-2xl shadow-2xl shadow-black/20 w-full max-w-md flex flex-col border border-[rgb(var(--color-border))] animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-[rgb(var(--color-border))] bg-gradient-to-r from-[rgba(var(--color-surface-hover),0.5)] to-transparent rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-[rgb(var(--color-text-primary))]">{title}</h2>
+          <button
+            onClick={onClose}
+            type="button"
+            className="p-2 rounded-xl hover:bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] hover:text-[rgb(var(--color-text-primary))] transition-all duration-200"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">Team Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Frontend Team"
+              className={formInput}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of the team..."
+              rows={3}
+              className={`${formInput} resize-none`}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">Team Lead</label>
+            <LeadSelect
+              value={leadId}
+              onChange={(id: string) => setLeadId(id)}
+              users={users}
+            />
+          </div>
+
+          {/* Status toggle only for edit */}
+          {team && (
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))]">
+              <div>
+                <p className="text-sm font-medium text-[rgb(var(--color-text-primary))]">Team Status</p>
+                <p className="text-[11px] text-[rgb(var(--color-text-tertiary))] mt-0.5">
+                  {status === "ACTIVE" ? "Team is currently active" : "Team is idle"}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={status === "ACTIVE"}
+                  onChange={(e) => setStatus(e.target.checked ? "ACTIVE" : "IDLE")}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-[rgb(var(--color-border))] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[rgba(var(--color-accent),0.2)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[rgb(var(--color-border))] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[rgb(var(--color-accent))]"></div>
+              </label>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="pt-3 flex justify-end gap-3 border-t border-[rgb(var(--color-border))]">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 text-sm font-medium text-[rgb(var(--color-text-secondary))] bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))] transition-all duration-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-5 py-2.5 text-sm font-semibold text-white bg-[rgb(var(--color-accent))] rounded-xl hover:bg-[rgb(var(--color-accent))]/90 shadow-sm shadow-[rgb(var(--color-accent))]/20 hover:shadow-md active:scale-[0.97] transition-all duration-200 disabled:opacity-50"
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {submitLabel}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
