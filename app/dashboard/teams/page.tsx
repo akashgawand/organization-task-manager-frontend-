@@ -8,6 +8,7 @@ import AddMemberModal from "@/features/teams/components/AddMemberModal";
 import EditTeamModal from "@/features/teams/components/EditTeamModal";
 import { teamService } from "@/app/services/teamServices";
 import { userService } from "@/app/services/userServices";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import {
   Search,
   Filter,
@@ -191,8 +192,8 @@ export default function TeamsPage() {
 
         {/* Loading / Error */}
         {loading && (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-[rgb(var(--color-accent))]" />
+          <div className="flex items-center justify-center py-20 min-h-[300px]">
+            <LoadingSpinner size="lg" />
           </div>
         )}
         {!loading && error && (
@@ -227,11 +228,10 @@ export default function TeamsPage() {
                       e.stopPropagation();
                       setOpenMenuId(openMenuId === team.id ? null : team.id);
                     }}
-                    className={`p-1.5 rounded-lg bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] text-[rgb(var(--color-text-tertiary))] hover:text-[rgb(var(--color-text-primary))] transition-all shadow-sm z-20 ${
-                      openMenuId === team.id
-                        ? "opacity-100 shadow-md"
-                        : "opacity-0 group-hover:opacity-100"
-                    }`}
+                    className={`p-1.5 rounded-lg bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] text-[rgb(var(--color-text-tertiary))] hover:text-[rgb(var(--color-text-primary))] transition-all shadow-sm z-20 ${openMenuId === team.id
+                      ? "opacity-100 shadow-md"
+                      : "opacity-0 group-hover:opacity-100"
+                      }`}
                     title="Team actions"
                   >
                     <MoreVertical className="w-4 h-4" />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useAuth } from "@/features/permissions";
 import PermissionGate from "@/features/permissions/components/PermissionGate";
 import {
@@ -204,7 +205,7 @@ export default function AnalyticsPage() {
     return (
       <DashboardLayout user={user}>
         <div className="flex h-screen items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[rgb(var(--color-accent))]"></div>
+          <LoadingSpinner size="xl" />
         </div>
       </DashboardLayout>
     );

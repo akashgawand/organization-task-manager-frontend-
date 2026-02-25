@@ -1,18 +1,39 @@
 "use client";
 
-export function LoadingSpinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+import Image from "next/image";
+
+export function LoadingSpinner({ size = "md" }: { size?: "sm" | "md" | "lg" | "xl" }) {
   const sizeClasses = {
-    sm: "w-4 h-4 border-2",
-    md: "w-8 h-8 border-3",
-    lg: "w-12 h-12 border-4",
+    sm: "w-8 h-8",
+    md: "w-16 h-16",
+    lg: "w-24 h-24",
+    xl: "w-32 h-32"
   };
 
   return (
-    <div className="flex-center w-full  h-full">
-      <div
-        className={`${sizeClasses[size]} border-[rgb(var(--color-border))] border-t-[rgb(var(--color-accent))] rounded-full animate-spin`}
-        style={{ animation: "spin 0.6s linear infinite" }}
-      />
+    <div className="flex items-center justify-center w-full min-h-[75vh]">
+      <div className={`relative ${sizeClasses[size]} flex items-center justify-center`}>
+        {/* Outer Orbit */}
+        <div className="absolute inset-0 rounded-full border-2 border-dashed border-[rgb(var(--color-border))] opacity-50 animate-[spin_4s_linear_infinite]"></div>
+
+        {/* Inner Fast Orbit */}
+        <div className="absolute inset-2 rounded-full border-2 border-t-[rgb(var(--color-accent))] border-r-[rgb(var(--color-accent-hover))] border-b-transparent border-l-transparent opacity-80 animate-[spin_1.5s_cubic-bezier(0.5,0,0.5,1)_infinite]"></div>
+
+        {/* Glowing Core Background */}
+        <div className="absolute inset-4 bg-[rgb(var(--color-accent))]/10 rounded-full blur-xl animate-pulse"></div>
+
+        {/* Center Bouncing Logo */}
+        <div className="relative z-10 w-3/5 h-3/5 animate-[pulse_2s_ease-in-out_infinite] drop-shadow-md">
+          <Image
+            src="/logo.png"
+            alt="Loading..."
+            fill
+            className="object-contain"
+            sizes="(max-width: 768px) 100vw, 33vw"
+            priority
+          />
+        </div>
+      </div>
     </div>
   );
 }

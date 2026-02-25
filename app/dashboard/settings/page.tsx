@@ -37,6 +37,7 @@ import LeadSelect from "@/components/shared/LeadSelect";
 import { useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { User } from "@/types";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 
 const TABS = [
   // { id: "general", label: "General", icon: Globe },
@@ -55,8 +56,9 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const data = await settingsService.getSettings();
-        if (data) setSettings(data);
+        // API call commented out as it is currently unused
+        // const data = await settingsService.getSettings();
+        // if (data) setSettings(data);
       } catch (error) {
         console.error("Failed to load settings");
       } finally {
@@ -88,8 +90,8 @@ export default function SettingsPage() {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 text-[rgb(var(--color-accent))] animate-spin" />
+        <div className="flex items-center justify-center h-96 min-h-[400px]">
+          <LoadingSpinner size="lg" />
         </div>
       );
     }
