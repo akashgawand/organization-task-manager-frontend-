@@ -1,23 +1,25 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Notification } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
 import { BellIcon, CloseIcon } from "@/components/icons";
+import { Notification } from "@/app/services/notificationServices";
 
 interface NotificationPanelProps {
   notifications: Notification[];
-  onMarkAsRead: (id: string) => void;
+  onMarkAsRead: (id: number) => void;
+  onOpen?: () => void;
 }
 
 export default function NotificationPanel({
   notifications,
   onMarkAsRead,
+  onOpen,
 }: NotificationPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   // Close on outside click
   useEffect(() => {
@@ -40,7 +42,12 @@ export default function NotificationPanel({
   return (
     <div className="relative" ref={panelRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!isOpen && onOpen) {
+            onOpen();
+          }
+          setIsOpen(!isOpen);
+        }}
         className="btn btn-ghost p-2 relative"
         aria-label="Notifications"
       >
@@ -70,17 +77,17 @@ export default function NotificationPanel({
             ) : (
               notifications.map((notif) => (
                 <div
-                  key={notif.id}
+                  key={notif.notification_id}
                   className={`
                     p-4 border-b border-[rgb(var(--color-border-light))] cursor-pointer transition-smooth
-                    ${!notif.isRead ? "bg-[rgb(var(--color-accent-light))]" : "hover:bg-[rgb(var(--color-surface-hover))]"}
+                    ${!notif.is_read ? "bg-[rgb(var(--color-accent-light))]" : "hover:bg-[rgb(var(--color-surface-hover))]"}
                   `}
                   onClick={() => {
-                    onMarkAsRead(notif.id);
-                    if (notif.actionUrl) {
-                      // Navigate to action URL
-                      setIsOpen(false);
-                    }
+                    onMarkAsRead(notif.notification_id);
+                    // Optional: Navigate to action URL if added in the future
+                    // if (notif.actionUrl) {
+                    //   setIsOpen(false);
+                    // }
                   }}
                 >
                   <div className="flex items-start gap-3">
@@ -90,10 +97,10 @@ export default function NotificationPanel({
                         {notif.message}
                       </p>
                       <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-2">
-                        {formatRelativeTime(notif.createdAt)}
+                        {formatRelativeTime(new Date(notif.created_at))}
                       </p>
                     </div>
-                    {!notif.isRead && (
+                    {!notif.is_read && (
                       <div className="w-2 h-2 bg-[rgb(var(--color-accent))] rounded-full mt-1" />
                     )}
                   </div>
