@@ -14,6 +14,7 @@ import {
   ChevronRight,
   LayoutDashboard,
   ClipboardCheck,
+  UserCog,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -73,6 +74,12 @@ const navItems: NavItem[] = [
     roles: ["super_admin", "admin", "team_lead", "senior_developer"],
   },
   {
+    label: "User Management",
+    href: "/dashboard/users",
+    icon: UserCog,
+    roles: ["super_admin", "admin"],
+  },
+  {
     label: "Calendar",
     href: "/dashboard/calendar",
     icon: Calendar,
@@ -98,7 +105,11 @@ const navItems: NavItem[] = [
   },
 ];
 
-export default function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProps) {
+export default function Sidebar({
+  userRole,
+  isCollapsed,
+  onToggle,
+}: SidebarProps) {
   const pathname = usePathname();
 
   const filteredNavItems = navItems.filter((item) =>
@@ -115,16 +126,30 @@ export default function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProp
       }}
     >
       {/* Logo & Toggle */}
-      <div className="flex items-center justify-between h-[var(--header-height)] px-6 border-b border-[rgb(var(--color-border))]">
+      <div className="flex items-center justify-between h-(--header-height) px-6 border-b border-[rgb(var(--color-border))]">
         {!isCollapsed && (
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="ApexPlanner" width={32} height={32} className="w-8 h-8" />
-            <span className="font-semibold text-lg text-[rgb(var(--color-text-primary))]">ApexPlanner</span>
+            <Image
+              src="/logo.png"
+              alt="ApexPlanner"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
+            <span className="font-semibold text-lg text-[rgb(var(--color-text-primary))]">
+              ApexPlanner
+            </span>
           </div>
         )}
         {isCollapsed && (
           <div className="flex items-center justify-center w-full">
-            <Image src="/logo.png" alt="ApexPlanner" width={32} height={32} className="w-8 h-8" />
+            <Image
+              src="/logo.png"
+              alt="ApexPlanner"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
           </div>
         )}
         <button
@@ -157,9 +182,10 @@ export default function Sidebar({ userRole, isCollapsed, onToggle }: SidebarProp
               href={item.href}
               className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-smooth
-                ${isActive
-                  ? "bg-[rgb(var(--color-accent-light))] text-[rgb(var(--color-accent))]"
-                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))]"
+                ${
+                  isActive
+                    ? "bg-[rgb(var(--color-accent-light))] text-[rgb(var(--color-accent))]"
+                    : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))]"
                 }
               `}
               title={isCollapsed ? item.label : undefined}

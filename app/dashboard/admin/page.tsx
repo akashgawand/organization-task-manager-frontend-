@@ -131,7 +131,6 @@ export default function AdminDashboard() {
             value={completedTasks}
             icon={<CheckIcon />}
             color="rgb(var(--color-success))"
-            trend={{ value: 15, isPositive: true }}
           />
         </div>
 

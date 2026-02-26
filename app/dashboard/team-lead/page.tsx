@@ -113,7 +113,6 @@ export default function TeamLeadDashboard() {
             title="Total Tasks"
             value={totalTasks}
             icon={<TaskIcon />}
-            trend={{ value: 12, isPositive: true }}
           />
           <AnalyticsCard
             title="In Progress"
@@ -132,7 +131,7 @@ export default function TeamLeadDashboard() {
             value={completedTasks}
             icon={<CheckIcon />}
             color="rgb(var(--color-success))"
-            trend={{ value: 8, isPositive: true }}
+
           />
         </div>
 

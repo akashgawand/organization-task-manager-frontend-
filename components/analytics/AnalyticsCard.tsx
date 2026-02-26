@@ -4,10 +4,7 @@ interface AnalyticsCardProps {
   title: string;
   value: string | number;
   icon: React.ReactNode;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
+
   color?: string;
 }
 
@@ -15,7 +12,6 @@ export default function AnalyticsCard({
   title,
   value,
   icon,
-  trend,
   color,
 }: AnalyticsCardProps) {
   return (
@@ -40,20 +36,7 @@ export default function AnalyticsCard({
           {icon}
         </div>
 
-        {/* Trend Pill Badge */}
-        {trend && (
-          <div
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors
-              ${
-                trend.isPositive
-                  ? "bg-[rgb(var(--color-success-light))] text-[rgb(var(--color-success))]"
-                  : "bg-[rgb(var(--color-danger-light))] text-[rgb(var(--color-danger))]"
-              }`}
-          >
-            <span className="text-[10px]">{trend.isPositive ? "↗" : "↘"}</span>
-            <span>{Math.abs(trend.value)}%</span>
-          </div>
-        )}
+     
       </div>
 
       {/* Typography */}
