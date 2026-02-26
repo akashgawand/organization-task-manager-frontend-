@@ -639,7 +639,7 @@ export default function MyTasksPage() {
               onTaskClick={handleTaskClick}
               onAddTask={handleAddTask}
               isRestrictedRole={
-                user?.role === "senior_developer" || user?.role === "employee"
+                false
               }
             />
           )}

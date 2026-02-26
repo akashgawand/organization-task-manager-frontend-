@@ -23,7 +23,7 @@ export default function TaskDistributionChart({
         color = "rgb(var(--color-danger))";
 
       return {
-        name: d.name,
+        name: nameLower === "done" ? "completed" : d.name,
         y: d.value,
         color,
       };

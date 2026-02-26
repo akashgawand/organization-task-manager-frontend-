@@ -661,7 +661,7 @@ export default function TaskDetailModal({
                   <option value="review">Under Review</option>
                   <option value="blocked">Blocked</option>
                   {(!isRestrictedRole || localTask.status === "done") && (
-                    <option value="done">Done</option>
+                    <option value="done">completed</option>
                   )}
                 </select>
                 {saveError && (
