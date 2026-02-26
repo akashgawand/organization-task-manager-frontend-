@@ -27,6 +27,7 @@ import { useAuth } from "@/features/permissions";
 import AnalyticsCard from "@/components/analytics/AnalyticsCard";
 
 import Avatar from "@/components/shared/Avatar";
+import Link from "next/link";
 
 export default function SuperAdminDashboard() {
   const { user } = useAuth();
@@ -313,9 +314,11 @@ export default function SuperAdminDashboard() {
                 ))
               )}
             </div>
-            <button className="btn btn-secondary w-full mt-4">
-              View All Users
-            </button>
+            <Link href="/dashboard/users">
+              <button className="btn btn-secondary w-full mt-4">
+                View All Users
+              </button>
+            </Link>
           </div>
         </div>
 

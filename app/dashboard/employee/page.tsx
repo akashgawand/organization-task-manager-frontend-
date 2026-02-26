@@ -150,7 +150,7 @@ export default function EmployeeDashboard() {
                   tasks={userTasks}
                   onTaskClick={handleTaskClick}
                   onAddTask={handleAddTask}
-                  isRestrictedRole={true}
+                  isRestrictedRole={false}
                 />
               )}
               {viewMode === "list" && (

@@ -97,10 +97,10 @@ export function getStatusLabel(status: string): string {
     todo: 'To Do',
     in_progress: 'In Progress',
     review: 'Review',
-    done: 'Done',
+    done: 'completed',
     blocked: 'Blocked',
   };
-  return labels[status] || status;
+  return labels[status.toLowerCase()] || status;
 }
 
 export function getPriorityLabel(priority: string): string {

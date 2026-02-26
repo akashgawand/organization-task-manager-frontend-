@@ -202,6 +202,7 @@ export default function SeniorDeveloperDashboard() {
             tasks={projectTasks}
             onTaskClick={handleTaskClick}
             onAddTask={handleAddTask}
+            
           />
         </div>
       </div>
