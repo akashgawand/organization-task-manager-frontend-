@@ -1,25 +1,36 @@
-// This would ideally connect to a real notification endpoint or socket
+import { api } from "./api";
+
 export interface Notification {
-  id: number;
-  text: string;
-  type: "mention" | "approval" | "change" | "info";
-  createdAt: Date;
-  read: boolean;
+  notification_id: number;
+  user_id: number;
+  type: string;
+  title: string;
+  message: string;
+  entity_type: string | null;
+  entity_id: number | null;
+  is_read: boolean;
+  created_at: string;
 }
 
 export const notificationService = {
-  async getNotifications(): Promise<Notification[]> {
-    // Placeholder for future API integration
-    // const response = await api.get("/notifications");
-    // return response.data;
-    
-    // Returning empty array or static structure for now to remove mockData dependency
-    // In a real app, this would likely fetch from an endpoint like /notifications
-    return [];
+  /**
+   * Fetch user's latest notifications
+   */
+  getNotifications: async (): Promise<Notification[]> => {
+    return api.get("/notifications");
   },
-  
-  async markAsRead(id: number) {
-      // await api.put(`/notifications/${id}/read`);
-      return true;
-  }
+
+  /**
+   * Mark a specific notification as read
+   */
+  markAsRead: async (id: number): Promise<Notification> => {
+    return api.put(`/notifications/${id}/read`, {});
+  },
+
+  /**
+   * Mark all of a user's notifications as read
+   */
+  markAllAsRead: async (): Promise<void> => {
+    return api.put("/notifications/read-all", {});
+  },
 };
