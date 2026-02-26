@@ -467,7 +467,7 @@ export default function ProjectDetailPage({
                         color: "text-[rgb(var(--color-accent))]",
                       },
                       {
-                        label: "Done",
+                        label: "completed",
                         count: doneCount,
                         color: "text-[rgb(var(--color-success))]",
                       },

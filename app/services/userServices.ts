@@ -68,6 +68,12 @@ export const userService = {
     return response;
   },
 
+  async changeUserRole(id: string, role: string) {
+    const payload = { role: role.toUpperCase() };
+    const response = await api.patch(`/users/${id}/role`, payload);
+    return response;
+  },
+
   async deleteUser(id: string) {
     const response = await api.delete(`/users/${id}`);
     return response;

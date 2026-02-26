@@ -18,7 +18,7 @@ const statusColumns: { status: TaskStatus; label: string; color: string }[] = [
     color: "rgb(var(--color-info))",
   },
   { status: "review", label: "Review", color: "rgb(var(--color-warning))" },
-  { status: "done", label: "Done", color: "rgb(var(--color-success))" },
+  { status: "done", label: "completed", color: "rgb(var(--color-success))" },
 ];
 
 export default function KanbanBoard({

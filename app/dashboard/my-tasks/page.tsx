@@ -407,28 +407,31 @@ export default function MyTasksPage() {
           <div className="flex bg-[rgb(var(--color-surface))] p-1 rounded-lg border border-[rgb(var(--color-border))] w-fit">
             <button
               onClick={() => setTaskScope("my_tasks")}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${taskScope === "my_tasks"
-                ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
-                : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
-                }`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                taskScope === "my_tasks"
+                  ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
+                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
+              }`}
             >
               My Tasks
             </button>
             <button
               onClick={() => setTaskScope("team_tasks")}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${taskScope === "team_tasks"
-                ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
-                : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
-                }`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                taskScope === "team_tasks"
+                  ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
+                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
+              }`}
             >
               Team Tasks
             </button>
             <button
               onClick={() => setTaskScope("all_tasks")}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${taskScope === "all_tasks"
-                ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
-                : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
-                }`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                taskScope === "all_tasks"
+                  ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
+                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
+              }`}
             >
               All Tasks
             </button>
@@ -478,8 +481,9 @@ export default function MyTasksPage() {
               <button
                 key={mode.id}
                 onClick={() => setViewMode(mode.id)}
-                className={`btn btn-sm ${viewMode === mode.id ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === mode.id ? "btn-primary" : "btn-ghost"
+                }`}
                 title={mode.label}
               >
                 {mode.icon}
@@ -497,8 +501,9 @@ export default function MyTasksPage() {
               <button
                 key={f.id}
                 onClick={() => setFilter(f.id)}
-                className={`btn btn-sm ${filter === f.id ? "btn-primary" : "btn-secondary"
-                  }`}
+                className={`btn btn-sm ${
+                  filter === f.id ? "btn-primary" : "btn-secondary"
+                }`}
               >
                 {f.label}
               </button>
@@ -553,7 +558,7 @@ export default function MyTasksPage() {
               <option value="todo">To Do</option>
               <option value="in_progress">In Progress</option>
               <option value="review">Under Review</option>
-              <option value="done">Done</option>
+              <option value="done">completed</option>
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--color-text-tertiary))] pointer-events-none" />
           </div>

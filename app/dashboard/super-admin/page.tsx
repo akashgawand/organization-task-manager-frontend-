@@ -129,12 +129,12 @@ export default function SuperAdminDashboard() {
               Organization-wide analytics and oversight
             </p>
           </div>
-          <div className="flex gap-2">
+          {/* <div className="flex gap-2">
             <button className="btn btn-secondary">
               <SettingsIcon />
               System Settings
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* Key Metrics */}
@@ -143,14 +143,12 @@ export default function SuperAdminDashboard() {
             title="Total Users"
             value={totalUsers}
             icon={<UserIcon />}
-            trend={{ value: 8, isPositive: true }}
             color="rgb(var(--color-accent))"
           />
           <AnalyticsCard
             title="Active Projects"
             value={activeProjects}
             icon={<ProjectIcon />}
-            trend={{ value: 12, isPositive: true }}
             color="rgb(var(--color-info))"
           />
           <AnalyticsCard
@@ -163,7 +161,6 @@ export default function SuperAdminDashboard() {
             title="Completion Rate"
             value={`${completionRate}%`}
             icon={<AnalyticsIcon />}
-            trend={{ value: 5, isPositive: true }}
             color="rgb(var(--color-success))"
           />
         </div>
