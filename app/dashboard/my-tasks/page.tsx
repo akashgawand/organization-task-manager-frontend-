@@ -22,6 +22,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   Search,
+  ClipboardList,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import TaskDetailModal from "@/components/modals/TaskDetailModal";
@@ -382,24 +383,31 @@ export default function MyTasksPage() {
     <DashboardLayout user={user}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">My Tasks</h1>
-            <p className="text-[rgb(var(--color-text-secondary))]">
-              Showing {filteredTasks.length} {filter === "all" ? "" : filter}{" "}
-              tasks of {totalCount} total
-              {selectedProjectId !== "all" && selectedProject
-                ? ` in ${selectedProject.name}`
-                : ""}
-            </p>
+        {/* Header */}
+        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: Title & Info */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[rgb(var(--color-accent))]/10 flex items-center justify-center shrink-0">
+                <ClipboardList className="w-6 h-6 text-[rgb(var(--color-accent))]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                    My Tasks
+                  </h1>
+                  <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20">
+                    {filteredTasks.length} of {totalCount}
+                  </span>
+                </div>
+                <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                  {filter === "all" ? "All tasks" : filter === "today" ? "Due today" : filter === "week" ? "Due this week" : "Overdue"}
+                  {selectedProjectId !== "all" && selectedProject ? ` in ${selectedProject.name}` : ""}
+                  {" "}&middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </p>
+              </div>
+            </div>
           </div>
-          <button
-            className="btn btn-primary"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            <Plus className="w-5 h-5" />
-            New Task
-          </button>
         </div>
 
         {/* Task Scope Filter (For Admins/Super Admins) */}
@@ -408,8 +416,8 @@ export default function MyTasksPage() {
             <button
               onClick={() => setTaskScope("my_tasks")}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${taskScope === "my_tasks"
-                  ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
-                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
+                ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
+                : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
                 }`}
             >
               My Tasks
@@ -417,8 +425,8 @@ export default function MyTasksPage() {
             <button
               onClick={() => setTaskScope("team_tasks")}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${taskScope === "team_tasks"
-                  ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
-                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
+                ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
+                : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
                 }`}
             >
               Team Tasks
@@ -426,8 +434,8 @@ export default function MyTasksPage() {
             <button
               onClick={() => setTaskScope("all_tasks")}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${taskScope === "all_tasks"
-                  ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
-                  : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
+                ? "bg-[rgb(var(--color-accent))] text-white shadow-sm"
+                : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))]"
                 }`}
             >
               All Tasks

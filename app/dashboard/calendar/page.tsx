@@ -5,7 +5,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { CalendarView } from "@/features/tasks";
 import { useAuth } from "@/features/permissions";
 import { taskService } from "@/app/services/taskServices";
-import { Filter, Users, RefreshCw } from "lucide-react";
+import { Filter, Users, RefreshCw, CalendarDays, ListTodo, Clock, CheckCircle2, TrendingUp } from "lucide-react";
 import TaskDetailModal from "@/components/modals/TaskDetailModal";
 import DateTasksModal from "@/components/modals/DateTasksModal";
 import { Task } from "@/features/tasks/types";
@@ -110,11 +110,11 @@ export default function CalendarPage() {
       prev.map((t) =>
         t.id === taskId
           ? {
-              ...t,
-              subtasks: t.subtasks.map((s) =>
-                s.id === subtaskId ? { ...s, isCompleted: !s.isCompleted } : s,
-              ),
-            }
+            ...t,
+            subtasks: t.subtasks.map((s) =>
+              s.id === subtaskId ? { ...s, isCompleted: !s.isCompleted } : s,
+            ),
+          }
           : t,
       ),
     );
@@ -156,74 +156,101 @@ export default function CalendarPage() {
     <DashboardLayout user={user}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Calendar</h1>
-            <p className="text-[rgb(var(--color-text-secondary))]">
-              Your life status map — click on dates to see tasks
-            </p>
-          </div>
+        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: Title & Info */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[rgb(var(--color-accent))]/10 flex items-center justify-center shrink-0">
+                <CalendarDays className="w-6 h-6 text-[rgb(var(--color-accent))]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                    Calendar
+                  </h1>
+                  <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20">
+                    {loading ? "..." : `${tasks.length} Tasks`}
+                  </span>
+                </div>
+                <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                  Your life status map &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </p>
+              </div>
+            </div>
 
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* Refresh */}
-            <button
-              onClick={() => fetchTasks(filter)}
-              disabled={loading}
-              className="btn btn-ghost btn-sm p-2"
-              title="Refresh"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-              />
-            </button>
+            {/* Right: Quick Stats + Filters */}
+            <div className="flex items-center gap-4 md:gap-6 flex-wrap">
+              {/* Divider */}
+              <div className="w-px h-8 bg-[rgb(var(--color-border))] hidden md:block" />
 
-            {/* Filters */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
-              {filters.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => handleFilterChange(f.id)}
-                  className={`btn btn-sm ${filter === f.id ? "btn-primary" : "btn-secondary"}`}
-                >
-                  {f.icon}
-                  {f.label}
-                </button>
-              ))}
+              {/* Filters */}
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
+                {filters.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => handleFilterChange(f.id)}
+                    className={`btn btn-sm ${filter === f.id ? "btn-primary" : "btn-secondary"}`}
+                  >
+                    {f.icon}
+                    {f.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="card">
-            <div className="text-sm text-[rgb(var(--color-text-tertiary))]">
-              Total Tasks
+          <div className="card flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-[rgb(var(--color-accent))]/10">
+              <ListTodo className="w-5 h-5 text-[rgb(var(--color-accent))]" />
             </div>
-            <div className="text-2xl font-bold mt-1">{tasks.length}</div>
-          </div>
-          <div className="card">
-            <div className="text-sm text-[rgb(var(--color-text-tertiary))]">
-              With Deadlines
-            </div>
-            <div className="text-2xl font-bold mt-1">
-              {tasks.filter((t) => t.dueDate).length}
+            <div>
+              <div className="text-sm text-[rgb(var(--color-text-tertiary))]">
+                Total Tasks
+              </div>
+              <div className="text-2xl font-bold mt-0.5">{tasks.length}</div>
             </div>
           </div>
-          <div className="card">
-            <div className="text-sm text-[rgb(var(--color-text-tertiary))]">
-              Completed
+          <div className="card flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-[rgb(var(--color-warning))]/10">
+              <Clock className="w-5 h-5 text-[rgb(var(--color-warning))]" />
             </div>
-            <div className="text-2xl font-bold mt-1 text-[rgb(var(--color-success))]">
-              {completedTasks}
+            <div>
+              <div className="text-sm text-[rgb(var(--color-text-tertiary))]">
+                With Deadlines
+              </div>
+              <div className="text-2xl font-bold mt-0.5">
+                {tasks.filter((t) => t.dueDate).length}
+              </div>
             </div>
           </div>
-          <div className="card">
-            <div className="text-sm text-[rgb(var(--color-text-tertiary))]">
-              Completion Rate
+          <div className="card flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-[rgb(var(--color-success))]/10">
+              <CheckCircle2 className="w-5 h-5 text-[rgb(var(--color-success))]" />
             </div>
-            <div className="text-2xl font-bold mt-1 text-[rgb(var(--color-accent))]">
-              {completionRate}%
+            <div>
+              <div className="text-sm text-[rgb(var(--color-text-tertiary))]">
+                Completed
+              </div>
+              <div className="text-2xl font-bold mt-0.5 text-[rgb(var(--color-success))]">
+                {completedTasks}
+              </div>
+            </div>
+          </div>
+          <div className="card flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-[rgb(var(--color-info))]/10">
+              <TrendingUp className="w-5 h-5 text-[rgb(var(--color-info))]" />
+            </div>
+            <div>
+              <div className="text-sm text-[rgb(var(--color-text-tertiary))]">
+                Completion Rate
+              </div>
+              <div className="text-2xl font-bold mt-0.5 text-[rgb(var(--color-accent))]">
+                {completionRate}%
+              </div>
             </div>
           </div>
         </div>

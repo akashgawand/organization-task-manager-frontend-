@@ -154,12 +154,55 @@ export default function ReviewsPage() {
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Task Reviews</h1>
-            <p className="text-[rgb(var(--color-text-secondary))]">
-              Review tasks from your team members
-            </p>
+        {/* Header */}
+        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: Title & Info */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[rgb(var(--color-accent))]/10 flex items-center justify-center shrink-0">
+                <ClipboardCheck className="w-6 h-6 text-[rgb(var(--color-accent))]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                    Task Reviews
+                  </h1>
+                  <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20">
+                    {isLoading ? "..." : `${reviewableTasks.length} Pending`}
+                  </span>
+                </div>
+                <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                  Review tasks from your team members &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </p>
+              </div>
+            </div>
+
+            {/* Right: Quick Stats */}
+            <div className="flex items-center gap-4 md:gap-5">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-warning))] animate-pulse" />
+                <div className="text-sm">
+                  <span className="font-semibold text-[rgb(var(--color-text-primary))]">{reviewableTasks.filter(t => t.status === "review").length}</span>
+                  <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Under Review</span>
+                </div>
+              </div>
+              <div className="w-px h-6 bg-[rgb(var(--color-border))]" />
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-info))]" />
+                <div className="text-sm">
+                  <span className="font-semibold text-[rgb(var(--color-text-primary))]">{reviewableTasks.filter(t => t.status === "in_progress").length}</span>
+                  <span className="text-[rgb(var(--color-text-tertiary))] ml-1">In Progress</span>
+                </div>
+              </div>
+              <div className="w-px h-6 bg-[rgb(var(--color-border))]" />
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-success))]" />
+                <div className="text-sm">
+                  <span className="font-semibold text-[rgb(var(--color-text-primary))]">{totalCount}</span>
+                  <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Total</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
