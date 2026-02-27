@@ -115,6 +115,10 @@ export const taskService = {
     return api.post(`/tasks/${taskId}/comments`, { content });
   },
 
+  async requestExtension(taskId: string, reason: string, requestedDate: string) {
+    return api.post(`/tasks/${taskId}/extension-request`, { reason, requestedDate });
+  },
+
   async deleteTask(id: string) {
     return api.delete(`/tasks/${id}`);
   },
