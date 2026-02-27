@@ -120,30 +120,72 @@ export default function TeamsPage() {
     <DashboardLayout user={user}>
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Teams</h1>
-            <p className="text-[rgb(var(--color-text-secondary))]">
-              Manage your organisation's teams and their resources.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchTeams}
-              className="p-2 rounded-lg border border-[rgb(var(--color-border))] hover:bg-[rgb(var(--color-surface-hover))] transition-colors"
-              title="Refresh"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-              />
-            </button>
-            <button
-              className="btn btn-primary flex items-center gap-2"
-              onClick={() => setIsCreateModalOpen(true)}
-            >
-              <Plus className="w-4 h-4" />
-              Create Team
-            </button>
+        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: Title & Info */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[rgb(var(--color-accent))]/10 flex items-center justify-center shrink-0">
+                <Users className="w-6 h-6 text-[rgb(var(--color-accent))]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                    Teams
+                  </h1>
+                  <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20">
+                    {loading ? "..." : `${teams.length} Total`}
+                  </span>
+                </div>
+                <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                  Manage your organisation&apos;s teams and their resources &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </p>
+              </div>
+            </div>
+
+            {/* Right: Quick Stats + Actions */}
+            <div className="flex items-center gap-4 md:gap-6 flex-wrap">
+              {/* Quick Stats */}
+              <div className="flex items-center gap-4 md:gap-5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-success))]" />
+                  <div className="text-sm">
+                    <span className="font-semibold text-[rgb(var(--color-text-primary))]">{teams.filter(t => t.status === "active" || !t.status).length}</span>
+                    <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Active</span>
+                  </div>
+                </div>
+                <div className="w-px h-6 bg-[rgb(var(--color-border))]" />
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-info))]" />
+                  <div className="text-sm">
+                    <span className="font-semibold text-[rgb(var(--color-text-primary))]">{teams.reduce((sum, t) => sum + (t.memberCount ?? 0), 0)}</span>
+                    <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Members</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="w-px h-8 bg-[rgb(var(--color-border))] hidden md:block" />
+
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+               {/*  <button
+                  onClick={fetchTeams}
+                  className="p-2 rounded-lg border border-[rgb(var(--color-border))] hover:bg-[rgb(var(--color-surface-hover))] transition-colors"
+                  title="Refresh"
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                  />
+                </button> */}
+                <button
+                  className="btn btn-primary flex items-center gap-2"
+                  onClick={() => setIsCreateModalOpen(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Team
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

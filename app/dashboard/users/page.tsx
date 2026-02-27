@@ -8,7 +8,7 @@ import { useAuth } from "@/features/permissions";
 import UserTable from "@/features/users/components/UserTable";
 import EditUserModal from "@/components/modals/EditUserModal";
 import DeleteUserDialog from "@/features/users/components/DeleteUserDialog";
-import { Search } from "lucide-react";
+import { Search, Users } from "lucide-react";
 
 export default function UsersPage() {
   const { user } = useAuth();
@@ -103,25 +103,64 @@ export default function UsersPage() {
     <DashboardLayout user={user}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">User Management</h1>
-            <p className="text-[rgb(var(--color-text-secondary))]">
-              Manage system users, roles, and access controls
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-[rgb(var(--color-text-tertiary))]" />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/30 transition-all w-full md:w-64"
-              />
+        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: Title & Info */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[rgb(var(--color-accent))]/10 flex items-center justify-center shrink-0">
+                <Users className="w-6 h-6 text-[rgb(var(--color-accent))]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                    User Management
+                  </h1>
+                  <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20">
+                    {isLoading ? "..." : `${users.length} Users`}
+                  </span>
+                </div>
+                <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                  Manage system users, roles, and access controls &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </p>
+              </div>
             </div>
-            {/* Add User Button can be implemented if needed, omitted as per requirements */}
+
+            {/* Right: Quick Stats + Search */}
+            <div className="flex items-center gap-4 md:gap-6 flex-wrap">
+              {/* Quick Stats */}
+              <div className="flex items-center gap-4 md:gap-5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-success))]" />
+                  <div className="text-sm">
+                    <span className="font-semibold text-[rgb(var(--color-text-primary))]">{users.filter(u => u.isActive).length}</span>
+                    <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Active</span>
+                  </div>
+                </div>
+                <div className="w-px h-6 bg-[rgb(var(--color-border))]" />
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-text-tertiary))]" />
+                  <div className="text-sm">
+                    <span className="font-semibold text-[rgb(var(--color-text-primary))]">{users.filter(u => !u.isActive).length}</span>
+                    <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Inactive</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="w-px h-8 bg-[rgb(var(--color-border))] hidden md:block" />
+
+              {/* Search */}
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[rgb(var(--color-text-tertiary))]" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-4 py-2 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-lg text-sm focus:outline-none focus:border-[rgb(var(--color-accent))] transition-colors w-full md:w-56"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

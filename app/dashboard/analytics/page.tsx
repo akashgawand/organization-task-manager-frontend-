@@ -235,30 +235,39 @@ export default function AnalyticsPage() {
       <PermissionGate requires="canViewAllAnalytics">
         <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[rgb(var(--color-accent))] to-[rgb(var(--color-accent))]/70 flex items-center justify-center shadow-lg shadow-[rgb(var(--color-accent))]/20">
-                <BarChart3 className="w-6 h-6 text-white" />
+          <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              {/* Left: Title & Info */}
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[rgb(var(--color-accent))]/10 flex items-center justify-center shrink-0">
+                  <BarChart3 className="w-6 h-6 text-[rgb(var(--color-accent))]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                      {selectedUser === 'all' ? 'Analytics Overview' : 'User Performance'}
+                    </h1>
+                    <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20">
+                      {selectedUser === 'all' ? 'Team View' : 'Individual'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                    {selectedUser === 'all'
+                      ? 'High-level operational metrics and team performance'
+                      : 'Individual metrics, task completion rate, and workload'}
+                    {' '}&middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-[rgb(var(--color-text-primary))]">
-                  {selectedUser === 'all' ? 'Analytics Overview' : 'User Performance'}
-                </h1>
-                <p className="text-sm text-[rgb(var(--color-text-tertiary))] mt-0.5">
-                  {selectedUser === 'all'
-                    ? 'High-level operational metrics and team performance'
-                    : 'Individual metrics, task completion rate, and workload'}
-                </p>
-              </div>
-            </div>
 
-            {/* User Filter Dropdown */}
-            <div className="w-full md:w-auto z-20">
-              <UserFilterSelect
-                value={selectedUser}
-                onChange={setSelectedUser}
-                users={users}
-              />
+              {/* Right: User Filter Dropdown */}
+              <div className="w-full md:w-auto z-20">
+                <UserFilterSelect
+                  value={selectedUser}
+                  onChange={setSelectedUser}
+                  users={users}
+                />
+              </div>
             </div>
           </div>
 
