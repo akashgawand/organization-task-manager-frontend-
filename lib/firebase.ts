@@ -28,7 +28,14 @@ export const getDeviceToken = async () => {
     const msg = await messaging();
     if (!msg) return null;
 
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const params = new URLSearchParams({
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
+    });
+    
+    const registration = await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${params.toString()}`);
     const readyRegistration = await navigator.serviceWorker.ready;
     
     const token = await getToken(msg, {

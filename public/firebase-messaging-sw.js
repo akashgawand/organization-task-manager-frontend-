@@ -1,14 +1,16 @@
 importScripts('https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.13.1/firebase-messaging-compat.js');
 
+const urlParams = new URL(location).searchParams;
+
 const firebaseConfig = {
-    apiKey: "AIzaSyCkvZruMoWv7yFDl1IuTL9NVjYq5g3L7Fw",
-    authDomain: "apexquants-3ba48.firebaseapp.com",
-    projectId: "apexquants-3ba48",
-    storageBucket: "apexquants-3ba48.firebasestorage.app",
-    messagingSenderId: "173150409126",
-    appId: "1:173150409126:web:e5bd16df0a48980428ff67",
-    measurementId: "G-M5WYY4RBRC"
+    apiKey: urlParams.get("apiKey"),
+    authDomain: urlParams.get("projectId") + ".firebaseapp.com",
+    projectId: urlParams.get("projectId"),
+    storageBucket: urlParams.get("projectId") + ".firebasestorage.app",
+    messagingSenderId: urlParams.get("messagingSenderId"),
+    appId: urlParams.get("appId"),
+    measurementId: "G-M5WYY4RBRC" // Analytics ID can stay identical cross-envs
 };
 
 try {
