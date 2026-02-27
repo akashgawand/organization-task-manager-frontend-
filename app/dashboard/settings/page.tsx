@@ -122,17 +122,25 @@ export default function SettingsPage() {
     <DashboardLayout user={user}>
       <div className="max-w-7xl mx-auto pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Header */}
-        <div className="mb-8 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[rgb(var(--color-accent))] to-[rgb(var(--color-accent))]/70 flex items-center justify-center shadow-lg shadow-[rgb(var(--color-accent))]/20">
-            <SettingsIcon className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[rgb(var(--color-text-primary))]">
-              Settings
-            </h1>
-            <p className="text-sm text-[rgb(var(--color-text-secondary))]">
-              Manage your workspace settings and preferences
-            </p>
+        {/* Header */}
+        <div className="mb-8 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[rgb(var(--color-accent))]/10 flex items-center justify-center shrink-0">
+              <SettingsIcon className="w-6 h-6 text-[rgb(var(--color-accent))]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                  Settings
+                </h1>
+                <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20">
+                  Workspace
+                </span>
+              </div>
+              <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                Manage your workspace settings and preferences &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+              </p>
+            </div>
           </div>
         </div>
 

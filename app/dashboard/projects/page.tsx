@@ -179,20 +179,20 @@ export default function ProjectsPage() {
     label: string;
     icon?: React.ReactNode;
   }[] = [
-    {
-      id: "all",
-      label: "All Projects",
-      icon: <FolderOpen className="w-4 h-4" />,
-    },
-    { id: "active", label: "Active" },
-    { id: "my-projects", label: "My Projects" },
-    { id: "starred", label: "Starred", icon: <Star className="w-4 h-4" /> },
-    {
-      id: "archived",
-      label: "Archived",
-      icon: <Archive className="w-4 h-4" />,
-    },
-  ];
+      {
+        id: "all",
+        label: "All Projects",
+        icon: <FolderOpen className="w-4 h-4" />,
+      },
+      { id: "active", label: "Active" },
+      { id: "my-projects", label: "My Projects" },
+      { id: "starred", label: "Starred", icon: <Star className="w-4 h-4" /> },
+      {
+        id: "archived",
+        label: "Archived",
+        icon: <Archive className="w-4 h-4" />,
+      },
+    ];
 
   const sortOptions: { id: SortOption; label: string }[] = [
     { id: "recent", label: "Recently Updated" },
@@ -205,34 +205,82 @@ export default function ProjectsPage() {
     <DashboardLayout user={user}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Projects</h1>
-            <p className="text-[rgb(var(--color-text-secondary))]">
-              {isLoading
-                ? "Loading..."
-                : `${filteredProjects.length} project${filteredProjects.length !== 1 ? "s" : ""}`}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchProjects}
-              className="p-2 hover:bg-[rgb(var(--color-surface-hover))] rounded-lg transition-colors"
-              title="Refresh"
-            >
-              <RefreshCw
-                className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
-              />
-            </button>
-            <PermissionGate requires="canCreateProject">
-              <button
-                className="btn btn-primary"
-                onClick={() => setIsCreateModalOpen(true)}
-              >
-                <Plus className="w-5 h-5" />
-                New Project
-              </button>
-            </PermissionGate>
+        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: Title & Info */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[rgb(var(--color-accent))]/10 flex items-center justify-center shrink-0">
+                <FolderOpen className="w-6 h-6 text-[rgb(var(--color-accent))]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                    Projects
+                  </h1>
+                  <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20">
+                    {isLoading ? "..." : `${filteredProjects.length} Total`}
+                  </span>
+                </div>
+                <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                  {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                </p>
+              </div>
+            </div>
+
+            {/* Right: Quick Stats + Actions */}
+            <div className="flex items-center gap-4 md:gap-6 flex-wrap">
+              {/* Quick Stats */}
+              <div className="flex items-center gap-4 md:gap-5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-success))]" />
+                  <div className="text-sm">
+                    <span className="font-semibold text-[rgb(var(--color-text-primary))]">{activeProjects.length}</span>
+                    <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Active</span>
+                  </div>
+                </div>
+                <div className="w-px h-6 bg-[rgb(var(--color-border))]" />
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-info))]" />
+                  <div className="text-sm">
+                    <span className="font-semibold text-[rgb(var(--color-text-primary))]">{completedProjects.length}</span>
+                    <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Done</span>
+                  </div>
+                </div>
+                <div className="w-px h-6 bg-[rgb(var(--color-border))]" />
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-warning))]" />
+                  <div className="text-sm">
+                    <span className="font-semibold text-[rgb(var(--color-text-primary))]">{starredProjects.length}</span>
+                    <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Starred</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="w-px h-8 bg-[rgb(var(--color-border))] hidden md:block" />
+
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+                {/* <button
+                  onClick={fetchProjects}
+                  className="p-2 hover:bg-[rgb(var(--color-surface-hover))] rounded-lg transition-colors"
+                  title="Refresh"
+                >
+                  <RefreshCw
+                    className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
+                  />
+                </button> */}
+                <PermissionGate requires="canCreateProject">
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setIsCreateModalOpen(true)}
+                  >
+                    <Plus className="w-5 h-5" />
+                    New Project
+                  </button>
+                </PermissionGate>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -123,19 +123,28 @@ export default function SuperAdminDashboard() {
     <DashboardLayout user={user}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Executive Dashboard</h1>
-            <p className="text-[rgb(var(--color-text-secondary))]">
-              Organization-wide analytics and oversight
-            </p>
+        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: Greeting & Info */}
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[rgb(var(--color-accent))] to-[rgb(var(--color-accent-secondary,var(--color-accent)))] flex items-center justify-center text-white text-xl font-bold shadow-md shrink-0">
+                {user?.name?.charAt(0)?.toUpperCase() || "S"}
+              </div>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                    Executive Dashboard
+                  </h1>
+                  <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20 capitalize">
+                    {user?.role?.replace(/_/g, " ") || "Super Admin"}
+                  </span>
+                </div>
+                <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                  Organization-wide analytics and oversight &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </p>
+              </div>
+            </div>
           </div>
-          {/* <div className="flex gap-2">
-            <button className="btn btn-secondary">
-              <SettingsIcon />
-              System Settings
-            </button>
-          </div> */}
         </div>
 
         {/* Key Metrics */}
@@ -234,8 +243,8 @@ export default function SuperAdminDashboard() {
                   const teamCompletionRate =
                     teamTasks.length > 0
                       ? Math.round(
-                          (completedTeamTasks / teamTasks.length) * 100,
-                        )
+                        (completedTeamTasks / teamTasks.length) * 100,
+                      )
                       : 0;
 
                   return (
@@ -361,8 +370,8 @@ export default function SuperAdminDashboard() {
                       <p className="text-xs text-[rgb(var(--color-text-tertiary))]">
                         {new Date(
                           activity.created_at ||
-                            activity.createdAt ||
-                            Date.now(),
+                          activity.createdAt ||
+                          Date.now(),
                         ).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
