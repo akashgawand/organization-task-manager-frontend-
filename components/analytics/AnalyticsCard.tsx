@@ -15,38 +15,31 @@ export default function AnalyticsCard({
   color,
 }: AnalyticsCardProps) {
   return (
-    <div className="card group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] cursor-default">
-      {/* Subtle background glow effect on hover */}
+    <div
+      className="relative overflow-hidden bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:border-[rgb(var(--color-border-hover))] hover:-translate-y-1 group"
+     
+    >
       <div
-        className="absolute -right-6 -top-6 w-32 h-32 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-500 blur-2xl pointer-events-none"
-        style={{ backgroundColor: color || "rgb(var(--color-accent))" }}
-      />
-
-      <div className="flex items-start justify-between mb-6 relative z-10">
-        {/* Icon Container */}
+        className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-[0.05] transition-opacity duration-500 scale-150 transform translate-x-4 -translate-y-4 pointer-events-none"
+        style={{ color: color || "currentColor" }}
+      >
+        {icon}
+      </div>
+      <div className="flex items-start justify-between relative z-10">
+        <div>
+          <p className="text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1">
+            {title}
+          </p>
+          <div className="text-3xl font-bold text-[rgb(var(--color-text-primary))] tracking-tight">
+            {value}
+          </div>
+        </div>
         <div
-          className="w-12 h-12 flex-center rounded-xl transition-transform duration-300 group-hover:scale-110 shadow-sm border border-[rgb(var(--color-border-light))]"
-          style={{
-            backgroundColor: color
-              ? `${color}15`
-              : "rgb(var(--color-accent-light))",
-            color: color || "rgb(var(--color-accent))",
-          }}
+          className="p-3 rounded-xl bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] shadow-sm group-hover:scale-110 transition-transform duration-300"
+          style={{ color: color || "rgb(var(--color-text-primary))" }}
         >
           {icon}
         </div>
-
-     
-      </div>
-
-      {/* Typography */}
-      <div className="relative z-10">
-        <h3 className="text-3xl font-extrabold tracking-tight mb-1 text-[rgb(var(--color-text-primary))] transition-colors duration-300">
-          {value}
-        </h3>
-        <p className="text-sm font-medium text-[rgb(var(--color-text-secondary))]">
-          {title}
-        </p>
       </div>
     </div>
   );

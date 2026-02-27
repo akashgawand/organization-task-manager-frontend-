@@ -5,10 +5,11 @@ import { User } from "@/types";
 import Sidebar from "./Sidebar";
 import TopNav from "./TopNav";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import CreateTaskModal from "@/features/tasks/components/CreateTaskModal";
 import { taskService } from "@/app/services/taskServices";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -21,6 +22,18 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Initialize push notifications
+  const { permission, requestPermission } = usePushNotifications(
+    String(user?.id || ""),
+  );
+
+  useEffect(() => {
+    // Automatically prompt Chrome native permission API if not fully determined
+    if (permission === "default") {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
 
   const handleCreateTask = async (data: any) => {
     await taskService.createTask(data);
@@ -39,7 +52,9 @@ export default function DashboardLayout({
         isSidebarCollapsed={isSidebarCollapsed}
       />
 
-      <main className={`mt-[var(--header-height)] p-6 transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-[var(--sidebar-collapsed-width)]' : 'lg:ml-[var(--sidebar-width)]'}`}>
+      <main
+        className={`mt-[var(--header-height)] p-6 transition-all duration-300 ${isSidebarCollapsed ? "lg:ml-[var(--sidebar-collapsed-width)]" : "lg:ml-[var(--sidebar-width)]"}`}
+      >
         {children}
       </main>
 

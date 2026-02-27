@@ -11,6 +11,7 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "firebase": "^12.9.0",
     "highcharts": "^12.5.0",
     "highcharts-more": "^0.1.7",
     "highcharts-react-official": "^3.2.3",

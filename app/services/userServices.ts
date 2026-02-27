@@ -99,5 +99,11 @@ export const userService = {
     // PATCH /api/v1/users/password
     const response = await api.patch(`/users/password`, payload);
     return response;
+  },
+
+  async saveFcmToken(token: string) {
+    const payload = { token };
+    const response = await api.post(`/users/fcm-token`, payload);
+    return response;
   }
 };
