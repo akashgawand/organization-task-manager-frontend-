@@ -124,11 +124,56 @@ export default function EmployeeDashboard() {
     <DashboardLayout user={user}>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold mb-2">My Dashboard</h1>
-          <p className="text-[rgb(var(--color-text-secondary))]">
-            Manage and track your assigned tasks
-          </p>
+        <div className="bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: Greeting & Info */}
+            <div className="flex items-start gap-4">
+              {/* Avatar */}
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[rgb(var(--color-accent))] to-[rgb(var(--color-accent-secondary,var(--color-accent)))] flex items-center justify-center text-white text-xl font-bold shadow-md shrink-0">
+                {user?.name?.charAt(0)?.toUpperCase() || "U"}
+              </div>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-[rgb(var(--color-text-primary))]">
+                    Welcome back, {user?.name?.split(" ")[0] || "User"}
+                  </h1>
+                  <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] border border-[rgb(var(--color-accent))]/20 capitalize">
+                    {user?.role?.replace(/_/g, " ") || "Employee"}
+                  </span>
+                </div>
+                <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
+                  {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                </p>
+              </div>
+            </div>
+
+            {/* Right: Quick Status Strip */}
+            <div className="flex items-center gap-4 md:gap-6">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-danger))] animate-pulse" />
+                <div className="text-sm">
+                  <span className="font-semibold text-[rgb(var(--color-text-primary))]">{overdueTasks}</span>
+                  <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Overdue</span>
+                </div>
+              </div>
+              <div className="w-px h-6 bg-[rgb(var(--color-border))]" />
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-info))]" />
+                <div className="text-sm">
+                  <span className="font-semibold text-[rgb(var(--color-text-primary))]">{inProgressTasks}</span>
+                  <span className="text-[rgb(var(--color-text-tertiary))] ml-1">In Progress</span>
+                </div>
+              </div>
+              <div className="w-px h-6 bg-[rgb(var(--color-border))]" />
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[rgb(var(--color-success))]" />
+                <div className="text-sm">
+                  <span className="font-semibold text-[rgb(var(--color-text-primary))]">{completedTasks}</span>
+                  <span className="text-[rgb(var(--color-text-tertiary))] ml-1">Done</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Metrics */}
