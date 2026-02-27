@@ -8,12 +8,14 @@ import { Notification } from "@/app/services/notificationServices";
 interface NotificationPanelProps {
   notifications: Notification[];
   onMarkAsRead: (id: number) => void;
+  onMarkAllAsRead?: () => void;
   onOpen?: () => void;
 }
 
 export default function NotificationPanel({
   notifications,
   onMarkAsRead,
+  onMarkAllAsRead,
   onOpen,
 }: NotificationPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +62,17 @@ export default function NotificationPanel({
       {isOpen && (
         <div className="absolute right-0 top-12 w-96 max-h-[32rem] bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-lg shadow-xl overflow-hidden animate-slide-down z-50">
           <div className="flex-between p-4 border-b border-[rgb(var(--color-border))]">
-            <h3 className="font-semibold">Notifications</h3>
+            <div className="flex items-center gap-3">
+              <h3 className="font-semibold">Notifications</h3>
+              {unreadCount > 0 && onMarkAllAsRead && (
+                <button
+                  onClick={onMarkAllAsRead}
+                  className="text-xs cursor-pointer bg-[rgb(var(--color-accent))] hover:bg-[rgb(var(--color-accent))]/90 p-2 rounded-2xl text-white transition-colors"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setIsOpen(false)}
               className="btn btn-ghost p-1"

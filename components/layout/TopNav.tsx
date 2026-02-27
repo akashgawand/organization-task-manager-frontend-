@@ -106,6 +106,16 @@ export default function TopNav({
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      // Optimistically update UI
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    } catch (error) {
+      console.error("Failed to mark all notifications as read", error);
+    }
+  };
+
   return (
     <header
       className={`fixed top-0 right-0 left-0 ${isSidebarCollapsed ? "lg:left-[var(--sidebar-collapsed-width)]" : "lg:left-[var(--sidebar-width)]"} h-[var(--header-height)] bg-[rgb(var(--color-surface))]/80 border-b border-[rgb(var(--color-border))]/60 z-30 px-4 md:px-6 transition-all duration-300`}
@@ -145,6 +155,7 @@ export default function TopNav({
           <NotificationPanel
             notifications={notifications}
             onMarkAsRead={handleMarkAsRead}
+            onMarkAllAsRead={handleMarkAllAsRead}
             onOpen={fetchNotifications}
           />
 

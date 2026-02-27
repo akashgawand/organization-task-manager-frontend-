@@ -18,6 +18,8 @@ import { formatDate, calculateTaskProgress } from "@/lib/utils";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/features/permissions";
 import { taskService } from "@/app/services/taskServices";
+import { userService } from "@/app/services/userServices";
+import { UserRole } from "@/types";
 
 interface TaskDetailModalProps {
   task: Task | null;
@@ -60,7 +62,26 @@ export default function TaskDetailModal({
   const [saveError, setSaveError] = useState<string | null>(null);
   const prevTaskIdRef = useRef<string | null>(null);
 
+  // Extension request states
+  const [showExtensionPrompt, setShowExtensionPrompt] = useState(false);
+  const [extensionDate, setExtensionDate] = useState("");
+  const [extensionReason, setExtensionReason] = useState("");
+  const [isRequestingExtension, setIsRequestingExtension] = useState(false);
+
+  // Edit task states
+  const [isEditingAssignees, setIsEditingAssignees] = useState(false);
+  const [isEditingDate, setIsEditingDate] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+
   const canAddComment = !!user;
+
+  // Determine if user can edit date/assignees directly
+  const canEditMetadata =
+    user?.role === "super_admin" ||
+    user?.role === "admin" ||
+    (localTask?.creatorId &&
+      user?.id &&
+      String(localTask.creatorId) === String(user.id));
 
   // Roles restricted from marking tasks as 'Done' directly
   const isRestrictedRole =
@@ -94,8 +115,21 @@ export default function TaskDetailModal({
       prevTaskIdRef.current = null;
       setNewComment("");
       setSaveError(null);
+      setShowExtensionPrompt(false);
+      setExtensionDate("");
+      setExtensionReason("");
+      setIsEditingAssignees(false);
+      setIsEditingDate(false);
+    } else if (canEditMetadata && users.length === 0) {
+      // Fetch users for the assignee dropdown if they have edit permission
+      userService
+        .getUsers({ limit: 1000 })
+        .then((res) => {
+          if (res?.data) setUsers(res.data);
+        })
+        .catch(console.error);
     }
-  }, [isOpen]);
+  }, [isOpen, canEditMetadata, users.length]);
 
   // Sync localTask if prop changes to a different task before useEffect fires
   if (task && task.id !== localTask?.id) {
@@ -203,28 +237,13 @@ export default function TaskDetailModal({
     [localTask, onSubtaskToggle],
   );
 
-  // ── Status change — optimistic, then PATCH backend ───────────────────────────
+  // ── Status change — optimistic, saved on submit ───────────────────────────
   const handleStatusChange = useCallback(
-    async (newStatus: Task["status"]) => {
+    (newStatus: Task["status"]) => {
       if (!localTask) return;
-
-      const prevStatus = localTask.status;
       setLocalTask({ ...localTask, status: newStatus });
-      onStatusChange?.(localTask.id, newStatus);
-
-      try {
-        await taskService.updateTaskStatus(
-          localTask.id,
-          toBackendStatus(newStatus),
-        );
-      } catch (err: any) {
-        console.error("Failed to update status:", err);
-        setSaveError(err?.message || "Status update failed");
-        // Rollback
-        setLocalTask((prev) => (prev ? { ...prev, status: prevStatus } : prev));
-      }
     },
-    [localTask, onStatusChange],
+    [localTask],
   );
 
   // ── Submit for Review — moves IN_PROGRESS → REVIEW ─────────────────────────
@@ -263,6 +282,12 @@ export default function TaskDetailModal({
           is_completed: s.isCompleted,
         })),
       });
+
+      // Optimistically push status change upstream once successfully saved
+      if (task && task.status !== localTask.status) {
+        onStatusChange?.(localTask.id, localTask.status);
+      }
+
       onClose();
     } catch (err: any) {
       console.error("Failed to save task:", err);
@@ -270,7 +295,81 @@ export default function TaskDetailModal({
     } finally {
       setIsSaving(false);
     }
-  }, [localTask, isSaving, onClose]);
+  }, [localTask, task, isSaving, onClose, onStatusChange]);
+
+  const handleRequestExtension = useCallback(async () => {
+    if (!localTask || !extensionDate || !extensionReason.trim()) return;
+    setIsRequestingExtension(true);
+    try {
+      await taskService.requestExtension(
+        localTask.id,
+        extensionReason,
+        extensionDate,
+      );
+      setShowExtensionPrompt(false);
+      setExtensionDate("");
+      setExtensionReason("");
+      // Could show a toast notification here
+      handleRefresh(); // Optional: trigger a refresh or mock success
+    } catch (err: any) {
+      console.error("Failed to request extension", err);
+      // setSaveError(err?.message || "Extension request failed");
+    } finally {
+      setIsRequestingExtension(false);
+    }
+  }, [localTask, extensionDate, extensionReason]);
+
+  // Handle saving the edited due date directly
+  const handleUpdateDueDate = useCallback(
+    async (newDate: string) => {
+      if (!localTask) return;
+      try {
+        await taskService.updateTask(localTask.id, { deadline: newDate });
+        setLocalTask((prev) =>
+          prev ? { ...prev, dueDate: new Date(newDate) } : prev,
+        );
+        setIsEditingDate(false);
+      } catch (err) {
+        console.error("Failed to update date", err);
+      }
+    },
+    [localTask],
+  );
+
+  // Handle assignee toggling directly
+  const handleToggleAssignee = useCallback(
+    async (userIdStr: string) => {
+      if (!localTask) return;
+      const currentAssigneeIds = localTask.assigneeIds || [];
+      let newAssigneeIds;
+      if (currentAssigneeIds.includes(userIdStr)) {
+        newAssigneeIds = currentAssigneeIds.filter((id) => id !== userIdStr);
+      } else {
+        newAssigneeIds = [...currentAssigneeIds, userIdStr];
+      }
+
+      // Set optimistically
+      setLocalTask((prev) => {
+        if (!prev) return prev;
+        const newAssigneesObjects = users.filter((u) =>
+          newAssigneeIds.includes(String(u.id)),
+        );
+        return {
+          ...prev,
+          assigneeIds: newAssigneeIds,
+          assignees: newAssigneesObjects,
+        };
+      });
+
+      try {
+        await taskService.assignTask(localTask.id, newAssigneeIds);
+      } catch (err) {
+        console.error("Failed to assign user", err);
+        handleRefresh(); // revert
+      }
+    },
+    [localTask, users],
+  );
 
   // ── Manual refresh ───────────────────────────────────────────────────────────
   const handleRefresh = useCallback(async () => {
@@ -347,17 +446,133 @@ export default function TaskDetailModal({
           <div className="overflow-y-auto flex-1 min-h-0 p-4 space-y-4">
             {/* Task Metadata */}
             <div className="grid grid-cols-2 gap-4">
-              {localTask.dueDate && (
+              <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
                   <span className="text-[rgb(var(--color-text-secondary))]">
                     Due:
                   </span>
-                  <span className="font-medium">
-                    {formatDate(localTask.dueDate)}
-                  </span>
+                  {isEditingDate && canEditMetadata ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        className="text-sm px-2 py-1 rounded bg-[rgb(var(--color-surface-hover))] border border-[rgb(var(--color-border))] cursor-text"
+                        defaultValue={
+                          localTask.dueDate
+                            ? new Date(localTask.dueDate)
+                                .toISOString()
+                                .split("T")[0]
+                            : ""
+                        }
+                        onBlur={(e) => {
+                          if (e.target.value)
+                            handleUpdateDueDate(e.target.value);
+                          else setIsEditingDate(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            if (e.currentTarget.value)
+                              handleUpdateDueDate(e.currentTarget.value);
+                            else setIsEditingDate(false);
+                          } else if (e.key === "Escape") {
+                            setIsEditingDate(false);
+                          }
+                        }}
+                        autoFocus
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {localTask.dueDate
+                          ? formatDate(localTask.dueDate)
+                          : "No due date"}
+                      </span>
+                      {canEditMetadata ? (
+                        <button
+                          onClick={() => setIsEditingDate(true)}
+                          className="text-xs px-2 py-0.5 rounded-full bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] hover:bg-[rgb(var(--color-accent))] hover:text-white transition-colors"
+                        >
+                          Edit
+                        </button>
+                      ) : localTask.dueDate ? (
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setShowExtensionPrompt(!showExtensionPrompt)
+                            }
+                            className="text-xs px-2 py-0.5 rounded-full bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] hover:bg-[rgb(var(--color-accent))] hover:text-white transition-colors"
+                          >
+                            Request Extension
+                          </button>
+
+                          {/* Extension Dropdown Popover */}
+                          {showExtensionPrompt && (
+                            <div className="absolute left-0 top-full mt-2 w-64 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-lg shadow-xl p-3 z-50">
+                              <h4 className="font-bold text-sm mb-2">
+                                Request Due Date Extension
+                              </h4>
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="text-xs text-[rgb(var(--color-text-secondary))] block mb-1">
+                                    Requested Date
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={extensionDate}
+                                    onChange={(e) =>
+                                      setExtensionDate(e.target.value)
+                                    }
+                                    className="w-full text-sm p-1.5 rounded border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface-hover))]"
+                                    min={new Date().toISOString().split("T")[0]}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-[rgb(var(--color-text-secondary))] block mb-1">
+                                    Reason
+                                  </label>
+                                  <textarea
+                                    value={extensionReason}
+                                    onChange={(e) =>
+                                      setExtensionReason(e.target.value)
+                                    }
+                                    placeholder="Why do you need more time?"
+                                    className="w-full text-sm p-1.5 rounded border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface-hover))] text-left resize-none h-16"
+                                  />
+                                </div>
+                                <div className="flex gap-2 justify-end">
+                                  <button
+                                    onClick={() =>
+                                      setShowExtensionPrompt(false)
+                                    }
+                                    className="px-2 py-1 text-xs btn-secondary rounded"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={handleRequestExtension}
+                                    disabled={
+                                      !extensionDate ||
+                                      !extensionReason.trim() ||
+                                      isRequestingExtension
+                                    }
+                                    className="px-2 py-1 text-xs btn-primary rounded disabled:opacity-50 flex items-center gap-1"
+                                  >
+                                    {isRequestingExtension && (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    )}
+                                    Send Request
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
               {localTask.estimatedHours && (
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
@@ -392,12 +607,55 @@ export default function TaskDetailModal({
             )}
 
             {/* Assignees */}
-            {assignees.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <User className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
-                  <h3 className="font-semibold text-sm">Assigned To</h3>
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <User className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
+                <h3 className="font-semibold text-sm">Assigned To</h3>
+                {canEditMetadata && (
+                  <button
+                    onClick={() => setIsEditingAssignees(!isEditingAssignees)}
+                    className="ml-2 text-xs px-2 py-0.5 rounded-full bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] hover:bg-[rgb(var(--color-accent))] hover:text-white transition-colors"
+                  >
+                    {isEditingAssignees ? "Done" : "Edit Assignees"}
+                  </button>
+                )}
+              </div>
+
+              {isEditingAssignees && canEditMetadata ? (
+                <div className="mb-4 p-3 bg-[rgb(var(--color-surface-hover))] border border-[rgb(var(--color-border))] rounded-lg">
+                  <h4 className="text-xs font-semibold text-[rgb(var(--color-text-secondary))] mb-2 uppercase tracking-wider">
+                    Select Users
+                  </h4>
+                  <div className="max-h-40 overflow-y-auto space-y-1 pr-2">
+                    {users.map((u) => {
+                      const isAssigned = localTask.assigneeIds?.includes(
+                        String(u.id),
+                      );
+                      return (
+                        <label
+                          key={u.id}
+                          className="flex items-center gap-3 p-2 rounded hover:bg-[rgb(var(--color-surface))] cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isAssigned}
+                            onChange={() => handleToggleAssignee(String(u.id))}
+                            className="w-4 h-4 rounded border-[rgb(var(--color-border))] text-[rgb(var(--color-accent))] focus:ring-[rgb(var(--color-accent))]"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Avatar name={u.name} avatar={u.avatar} size="sm" />
+                            <span className="text-sm font-medium">
+                              {u.name}
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
+              ) : null}
+
+              {assignees.length > 0 ? (
                 <div className="flex flex-wrap gap-3">
                   {assignees.map((assignee) => (
                     <div
@@ -420,8 +678,12 @@ export default function TaskDetailModal({
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-sm text-[rgb(var(--color-text-tertiary))] italic">
+                  No assignees selected.
+                </div>
+              )}
+            </div>
 
             {/* Subtasks */}
             {localTask.subtasks.length > 0 && (

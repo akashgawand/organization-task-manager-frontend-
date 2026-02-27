@@ -44,7 +44,7 @@ export default function MyTasksPage() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [filter, setFilter] = useState<FilterType>("all");
-  const [taskScope, setTaskScope] = useState<TaskScopeType>("my_tasks");
+  const [taskScope, setTaskScope] = useState<TaskScopeType>("all_tasks");
   const [sortBy, setSortBy] = useState<"dueDate" | "priority" | "status">(
     "dueDate",
   );
