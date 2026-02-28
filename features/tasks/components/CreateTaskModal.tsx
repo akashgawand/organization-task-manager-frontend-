@@ -5,19 +5,21 @@ import {
   X,
   Calendar,
   Flag,
-  Paperclip,
   Briefcase,
   Plus,
   Search,
   Loader2,
   CheckCircle2,
   Trash2,
+  Upload,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "@/features/permissions";
 import { projectService } from "@/app/services/projectServices";
 import { userService } from "@/app/services/userServices";
 import { teamService } from "@/app/services/teamServices";
 import CreateProjectModal from "@/components/modals/CreateProjectModal";
+import { taskService } from "@/app/services/taskServices";
 import { TaskPriority, Team } from "@/types";
 
 const ROLE_RANK: Record<string, number> = {
@@ -31,7 +33,7 @@ const ROLE_RANK: Record<string, number> = {
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (taskData: any) => Promise<void> | void;
+  onSubmit: (taskData: any) => Promise<any> | any;
   defaultProjectId?: string;
 }
 
@@ -52,6 +54,7 @@ export default function CreateTaskModal({
   const [dueDate, setDueDate] = useState("");
   const [subtasks, setSubtasks] = useState<{ title: string }[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,6 +85,7 @@ export default function CreateTaskModal({
     setDueDate("");
     setSubtasks([]);
     setNewSubtaskTitle("");
+    setAttachmentFiles([]);
     setError(null);
     setAssigneeSearch("");
 
@@ -108,13 +112,13 @@ export default function CreateTaskModal({
           setAvailableUsers(
             user
               ? [
-                  {
-                    id: String(user.id),
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                  },
-                ]
+                {
+                  id: String(user.id),
+                  name: user.name,
+                  email: user.email,
+                  role: user.role,
+                },
+              ]
               : [],
           );
         } else {
@@ -177,6 +181,51 @@ export default function CreateTaskModal({
 
   if (!isOpen) return null;
 
+  const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx", ".txt", ".xls", ".xlsx", ".ppt", ".pptx"];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+  const MAX_FILES = 5;
+
+  const validateFile = (file: File): string | null => {
+    const ext = "." + file.name.split(".").pop()?.toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return `"${file.name}" is not allowed. Accepted: ${ALLOWED_EXTENSIONS.join(", ")}`;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return `"${file.name}" exceeds the 10MB limit`;
+    }
+    return null;
+  };
+
+  const handleFilesSelected = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles: File[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const err = validateFile(files[i]);
+      if (err) {
+        setError(err);
+        return;
+      }
+      newFiles.push(files[i]);
+    }
+    const combined = [...attachmentFiles, ...newFiles];
+    if (combined.length > MAX_FILES) {
+      setError(`Maximum ${MAX_FILES} files allowed per task`);
+      return;
+    }
+    setError(null);
+    setAttachmentFiles(combined);
+  };
+
+  const removeFile = (index: number) => {
+    setAttachmentFiles(attachmentFiles.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -199,7 +248,17 @@ export default function CreateTaskModal({
         payload.subtasks = subtasks;
       }
 
-      await onSubmit(payload);
+      const result = await onSubmit(payload);
+
+      // Upload attachments after task is created
+      if (attachmentFiles.length > 0) {
+        const taskId = (result as any)?.task_id || (result as any)?.id;
+        if (taskId) {
+          for (const file of attachmentFiles) {
+            await taskService.uploadAttachment(String(taskId), file);
+          }
+        }
+      }
       // Parent handles onClose on success
     } catch (err: any) {
       setError(err?.message || "Failed to create task. Please try again.");
@@ -555,20 +614,69 @@ export default function CreateTaskModal({
               </div>
             </div>
 
-            {/* Attachments (placeholder) */}
+            {/* Attachments */}
             <div>
               <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">
-                Attachments
+                Attachments {attachmentFiles.length > 0 && (
+                  <span className="text-xs font-normal text-[rgb(var(--color-accent))] ml-1">
+                    ({attachmentFiles.length}/{MAX_FILES})
+                  </span>
+                )}
               </label>
-              <div className="border-2 border-dashed border-[rgb(var(--color-border))] rounded-xl p-8 text-center hover:border-[rgb(var(--color-accent))]/50 hover:bg-[rgb(var(--color-surface-hover))] transition-colors cursor-pointer">
-                <Paperclip className="w-8 h-8 text-[rgb(var(--color-text-tertiary))] mx-auto mb-2" />
+
+              {/* Drop zone */}
+              <div
+                className="border-2 border-dashed border-[rgb(var(--color-border))] rounded-xl p-6 text-center hover:border-[rgb(var(--color-accent))]/50 hover:bg-[rgb(var(--color-surface-hover))] transition-colors cursor-pointer relative"
+                onClick={() => document.getElementById("file-upload-input")?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-[rgb(var(--color-accent))]", "bg-[rgb(var(--color-surface-hover))]"); }}
+                onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-[rgb(var(--color-accent))]", "bg-[rgb(var(--color-surface-hover))]"); }}
+                onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-[rgb(var(--color-accent))]", "bg-[rgb(var(--color-surface-hover))]"); handleFilesSelected(e.dataTransfer.files); }}
+              >
+                <Upload className="w-8 h-8 text-[rgb(var(--color-text-tertiary))] mx-auto mb-2" />
                 <p className="text-sm text-[rgb(var(--color-text-secondary))]">
                   Click to upload or drag and drop
                 </p>
                 <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-1">
-                  SVG, PNG, JPG or PDF (max. 10MB)
+                  PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, PPTX (max. 10MB)
                 </p>
+                <input
+                  id="file-upload-input"
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                  multiple
+                  onChange={(e) => { handleFilesSelected(e.target.files); e.target.value = ""; }}
+                />
               </div>
+
+              {/* File list */}
+              {attachmentFiles.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {attachmentFiles.map((file, index) => (
+                    <div
+                      key={`${file.name}-${index}`}
+                      className="group flex items-center gap-3 p-2.5 bg-[rgb(var(--color-surface-hover))] rounded-lg"
+                    >
+                      <FileText className="w-5 h-5 text-[rgb(var(--color-accent))] shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[rgb(var(--color-text-primary))] truncate">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-[rgb(var(--color-text-tertiary))]">
+                          {formatFileSize(file.size)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="p-1 text-[rgb(var(--color-text-tertiary))] hover:text-[rgb(var(--color-error))] transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

@@ -328,10 +328,11 @@ export default function MyTasksPage() {
   const handleCreateTaskSubmit = async (taskData: any) => {
     try {
       // CreateTaskModal already sends assignee_ids — don't override with assigned_to
-      await taskService.createTask(taskData);
+      const result = await taskService.createTask(taskData);
       // Refetch to stay in sync with backend
       fetchTasksData();
       setIsCreateModalOpen(false);
+      return result;
     } catch (error) {
       console.error("Failed to create task", error);
     }

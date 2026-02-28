@@ -11,6 +11,10 @@ import {
   Tag,
   RefreshCw,
   Loader2,
+  Download,
+  FileText,
+  Upload,
+  Trash2,
 } from "lucide-react";
 import { PriorityBadge, StatusBadge } from "@/components/shared/Badge";
 import Avatar from "@/components/shared/Avatar";
@@ -71,6 +75,8 @@ export default function TaskDetailModal({
   // Edit task states
   const [isEditingAssignees, setIsEditingAssignees] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
+  const [isEditingAttachments, setIsEditingAttachments] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
 
   const canAddComment = !!user;
@@ -120,6 +126,8 @@ export default function TaskDetailModal({
       setExtensionReason("");
       setIsEditingAssignees(false);
       setIsEditingDate(false);
+      setIsEditingAttachments(false);
+      setIsUploadingFile(false);
     } else if (canEditMetadata && users.length === 0) {
       // Fetch users for the assignee dropdown if they have edit permission
       userService
@@ -460,8 +468,8 @@ export default function TaskDetailModal({
                         defaultValue={
                           localTask.dueDate
                             ? new Date(localTask.dueDate)
-                                .toISOString()
-                                .split("T")[0]
+                              .toISOString()
+                              .split("T")[0]
                             : ""
                         }
                         onBlur={(e) => {
@@ -722,11 +730,10 @@ export default function TaskDetailModal({
                           className="sr-only"
                         />
                         <div
-                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                            subtask.isCompleted
-                              ? "bg-[rgb(var(--color-accent))] border-[rgb(var(--color-accent))]"
-                              : "bg-transparent border-[rgb(var(--color-border))] group-hover:border-[rgb(var(--color-accent))]"
-                          }`}
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${subtask.isCompleted
+                            ? "bg-[rgb(var(--color-accent))] border-[rgb(var(--color-accent))]"
+                            : "bg-transparent border-[rgb(var(--color-border))] group-hover:border-[rgb(var(--color-accent))]"
+                            }`}
                         >
                           {subtask.isCompleted && (
                             <svg
@@ -746,11 +753,10 @@ export default function TaskDetailModal({
                         </div>
                       </div>
                       <span
-                        className={`flex-1 text-sm transition-all ${
-                          subtask.isCompleted
-                            ? "text-[rgb(var(--color-text-tertiary))] line-through"
-                            : "text-[rgb(var(--color-text-primary))]"
-                        }`}
+                        className={`flex-1 text-sm transition-all ${subtask.isCompleted
+                          ? "text-[rgb(var(--color-text-tertiary))] line-through"
+                          : "text-[rgb(var(--color-text-primary))]"
+                          }`}
                       >
                         {subtask.title}
                       </span>
@@ -761,35 +767,155 @@ export default function TaskDetailModal({
             )}
 
             {/* Attachments */}
-            {localTask.attachments && localTask.attachments.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Paperclip className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
-                  <h3 className="font-semibold text-sm">
-                    Attachments ({localTask.attachments.length})
-                  </h3>
-                </div>
-                <div className="space-y-2">
-                  {localTask.attachments.map((attachment) => (
-                    <a
-                      key={attachment.id}
-                      href={attachment.url}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-[rgb(var(--color-border))] hover:border-[rgb(var(--color-accent))] transition-colors"
-                    >
-                      <Paperclip className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {attachment.name}
-                        </p>
-                        <p className="text-xs text-[rgb(var(--color-text-tertiary))]">
-                          {(attachment.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Paperclip className="w-4 h-4 text-[rgb(var(--color-text-tertiary))]" />
+                <h3 className="font-semibold text-sm">
+                  Attachments ({localTask.attachments?.length || 0})
+                </h3>
+                {canEditMetadata && (
+                  <button
+                    onClick={() => setIsEditingAttachments(!isEditingAttachments)}
+                    className="ml-2 text-xs px-2 py-0.5 rounded-full bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] hover:bg-[rgb(var(--color-accent))] hover:text-white transition-colors"
+                  >
+                    {isEditingAttachments ? "Done" : "Edit"}
+                  </button>
+                )}
               </div>
-            )}
+
+              {/* Upload zone — shown in edit mode */}
+              {isEditingAttachments && canEditMetadata && (
+                <div className="mb-3">
+                  <div
+                    className="border-2 border-dashed border-[rgb(var(--color-border))] rounded-xl p-5 text-center hover:border-[rgb(var(--color-accent))]/50 hover:bg-[rgb(var(--color-surface-hover))] transition-colors cursor-pointer relative"
+                    onClick={() => document.getElementById("edit-file-upload-input")?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-[rgb(var(--color-accent))]", "bg-[rgb(var(--color-surface-hover))]"); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-[rgb(var(--color-accent))]", "bg-[rgb(var(--color-surface-hover))]"); }}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("border-[rgb(var(--color-accent))]", "bg-[rgb(var(--color-surface-hover))]");
+                      const file = e.dataTransfer.files?.[0];
+                      if (!file || !localTask) return;
+                      setIsUploadingFile(true);
+                      try {
+                        await taskService.uploadAttachment(localTask.id, file);
+                        const full = await taskService.getTaskById(localTask.id);
+                        if (full) setLocalTask(full);
+                      } catch (err: any) {
+                        setSaveError(err?.message || "Upload failed");
+                      } finally {
+                        setIsUploadingFile(false);
+                      }
+                    }}
+                  >
+                    {isUploadingFile ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-[rgb(var(--color-accent))] mx-auto mb-1" />
+                    ) : (
+                      <Upload className="w-6 h-6 text-[rgb(var(--color-text-tertiary))] mx-auto mb-1" />
+                    )}
+                    <p className="text-sm text-[rgb(var(--color-text-secondary))]">
+                      {isUploadingFile ? "Uploading…" : "Click or drag to upload a file"}
+                    </p>
+                    <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-1">
+                      PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, PPTX (max 10MB)
+                    </p>
+                    <input
+                      id="edit-file-upload-input"
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                      disabled={isUploadingFile}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (!file || !localTask) return;
+                        setIsUploadingFile(true);
+                        try {
+                          await taskService.uploadAttachment(localTask.id, file);
+                          const full = await taskService.getTaskById(localTask.id);
+                          if (full) setLocalTask(full);
+                        } catch (err: any) {
+                          setSaveError(err?.message || "Upload failed");
+                        } finally {
+                          setIsUploadingFile(false);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Attachment list */}
+              {localTask.attachments && localTask.attachments.length > 0 ? (
+                <div className="space-y-2">
+                  {localTask.attachments.map((attachment: any) => {
+                    const fileSizeStr =
+                      attachment.size < 1024
+                        ? attachment.size + " B"
+                        : attachment.size < 1024 * 1024
+                          ? (attachment.size / 1024).toFixed(1) + " KB"
+                          : (attachment.size / 1024 / 1024).toFixed(2) + " MB";
+
+                    return (
+                      <div
+                        key={attachment.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-[rgb(var(--color-border))] hover:border-[rgb(var(--color-accent))]/50 transition-colors group"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-[rgb(var(--color-accent))]/10 flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4 text-[rgb(var(--color-accent))]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {attachment.name}
+                          </p>
+                          <p className="text-xs text-[rgb(var(--color-text-tertiary))]">
+                            {fileSizeStr}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={attachment.name}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[rgb(var(--color-accent))]/10 text-[rgb(var(--color-accent))] hover:bg-[rgb(var(--color-accent))] hover:text-white transition-colors"
+                            title={`Download ${attachment.name}`}
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Download
+                          </a>
+                          {isEditingAttachments && canEditMetadata && (
+                            <button
+                              onClick={async () => {
+                                if (!localTask) return;
+                                try {
+                                  await taskService.deleteAttachment(attachment.id);
+                                  const full = await taskService.getTaskById(localTask.id);
+                                  if (full) setLocalTask(full);
+                                } catch (err: any) {
+                                  setSaveError(err?.message || "Delete failed");
+                                }
+                              }}
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                              title={`Delete ${attachment.name}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                !isEditingAttachments && (
+                  <p className="text-sm text-[rgb(var(--color-text-tertiary))] italic">
+                    No attachments.
+                  </p>
+                )
+              )}
+            </div>
 
             {/* Comments */}
             <div>
