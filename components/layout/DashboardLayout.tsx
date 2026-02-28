@@ -36,8 +36,9 @@ export default function DashboardLayout({
   }, [permission, requestPermission]);
 
   const handleCreateTask = async (data: any) => {
-    await taskService.createTask(data);
+    const result = await taskService.createTask(data);
     setIsTaskModalOpen(false);
+    return result;
   };
   return (
     <div className="min-h-screen bg-[rgb(var(--color-background))]">
