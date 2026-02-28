@@ -48,7 +48,7 @@ const TABS = [
 ];
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("users");
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,6 +67,15 @@ export default function SettingsPage() {
     };
     fetchSettings();
   }, []);
+
+  // Wait until user is loaded from localStorage
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[rgb(var(--color-background))]">
+        <Loader2 className="w-10 h-10 animate-spin text-[rgb(var(--color-accent))]" />
+      </div>
+    );
+  }
 
   // Redirect if not admin or super_admin
   if (user.role !== "super_admin" && user.role !== "admin") {
@@ -138,7 +147,13 @@ export default function SettingsPage() {
                 </span>
               </div>
               <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
-                Manage your workspace settings and preferences &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                Manage your workspace settings and preferences &middot;{" "}
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               </p>
             </div>
           </div>
@@ -156,10 +171,11 @@ export default function SettingsPage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${isActive
-                        ? "bg-[rgb(var(--color-accent-light))] text-[rgb(var(--color-accent))] shadow-sm"
-                        : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))]"
-                        }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+                        isActive
+                          ? "bg-[rgb(var(--color-accent-light))] text-[rgb(var(--color-accent))] shadow-sm"
+                          : "text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))]"
+                      }`}
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
                       <span className="font-medium text-sm">{tab.label}</span>
@@ -179,28 +195,49 @@ export default function SettingsPage() {
 }
 
 /* ─── Reusable Card Shell ────────────────────────────────────────────── */
-function SettingsCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function SettingsCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={`bg-[rgb(var(--color-surface))] rounded-2xl border border-[rgb(var(--color-border))] shadow-sm overflow-hidden transition-all duration-300 hover:border-[rgb(var(--color-border-hover))] ${className}`}>
+    <div
+      className={`bg-[rgb(var(--color-surface))] rounded-2xl border border-[rgb(var(--color-border))] shadow-sm overflow-hidden transition-all duration-300 hover:border-[rgb(var(--color-border-hover))] ${className}`}
+    >
       {children}
     </div>
   );
 }
 
-function CardHeader({ title, children }: { title: string; children?: React.ReactNode }) {
+function CardHeader({
+  title,
+  children,
+}: {
+  title: string;
+  children?: React.ReactNode;
+}) {
   return (
     <div className="flex items-center justify-between p-6 border-b border-[rgb(var(--color-border))] bg-gradient-to-r from-[rgba(var(--color-surface-hover),0.5)] to-transparent">
-      <h2 className="text-lg font-semibold text-[rgb(var(--color-text-primary))]">{title}</h2>
+      <h2 className="text-lg font-semibold text-[rgb(var(--color-text-primary))]">
+        {title}
+      </h2>
       {children}
     </div>
   );
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">{children}</label>;
+  return (
+    <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">
+      {children}
+    </label>
+  );
 }
 
-const inputClasses = "w-full px-4 py-2.5 bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/30 focus:border-[rgb(var(--color-accent))] transition-all duration-200";
+const inputClasses =
+  "w-full px-4 py-2.5 bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/30 focus:border-[rgb(var(--color-accent))] transition-all duration-200";
 
 // General Settings Tab
 function GeneralSettings({
@@ -459,7 +496,10 @@ function UserManagement() {
               </thead>
               <tbody className="divide-y divide-[rgb(var(--color-border))]">
                 {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-[rgb(var(--color-surface-hover))] transition-colors">
+                  <tr
+                    key={user.id}
+                    className="hover:bg-[rgb(var(--color-surface-hover))] transition-colors"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <Avatar
@@ -471,22 +511,32 @@ function UserManagement() {
                           <p className="text-sm font-medium text-[rgb(var(--color-text-primary))]">
                             {user.name}
                           </p>
-                          <p className="text-xs text-[rgb(var(--color-text-tertiary))]">{user.email}</p>
+                          <p className="text-xs text-[rgb(var(--color-text-tertiary))]">
+                            {user.email}
+                          </p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {(() => {
                         const roleColors: Record<string, string> = {
-                          super_admin: "bg-red-500/10 text-red-500 border-red-500/20",
-                          admin: "bg-violet-500/10 text-violet-500 border-violet-500/20",
-                          team_lead: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-                          senior_developer: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
-                          employee: "bg-[rgba(var(--color-accent),0.1)] text-[rgb(var(--color-accent))] border-[rgba(var(--color-accent),0.15)]",
+                          super_admin:
+                            "bg-red-500/10 text-red-500 border-red-500/20",
+                          admin:
+                            "bg-violet-500/10 text-violet-500 border-violet-500/20",
+                          team_lead:
+                            "bg-amber-500/10 text-amber-500 border-amber-500/20",
+                          senior_developer:
+                            "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
+                          employee:
+                            "bg-[rgba(var(--color-accent),0.1)] text-[rgb(var(--color-accent))] border-[rgba(var(--color-accent),0.15)]",
                         };
-                        const cls = roleColors[user.role] || roleColors.employee;
+                        const cls =
+                          roleColors[user.role] || roleColors.employee;
                         return (
-                          <span className={`px-2.5 py-1 text-[11px] font-semibold rounded-full border capitalize ${cls}`}>
+                          <span
+                            className={`px-2.5 py-1 text-[11px] font-semibold rounded-full border capitalize ${cls}`}
+                          >
                             {(user.role || "").replace(/_/g, " ")}
                           </span>
                         );
@@ -497,10 +547,11 @@ function UserManagement() {
                     </td> */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-full border ${user.isActive
-                          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                          : "bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] border-[rgb(var(--color-border))]"
-                          }`}
+                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-full border ${
+                          user.isActive
+                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                            : "bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] border-[rgb(var(--color-border))]"
+                        }`}
                       >
                         {user.isActive ? "Active" : "Inactive"}
                       </span>
@@ -554,7 +605,8 @@ function UserManagement() {
                 Delete User
               </h3>
               <p className="text-sm text-[rgb(var(--color-text-secondary))]">
-                Are you sure you want to delete this user? This action cannot be undone.
+                Are you sure you want to delete this user? This action cannot be
+                undone.
               </p>
             </div>
             <div className="flex gap-3 p-4 border-t border-[rgb(var(--color-border))] bg-[rgba(var(--color-surface-hover),0.3)]">
@@ -612,7 +664,11 @@ function TeamManagement() {
     fetchUsers();
   }, []);
 
-  const handleCreate = async (data: { name: string; description: string; lead_id: number }) => {
+  const handleCreate = async (data: {
+    name: string;
+    description: string;
+    lead_id: number;
+  }) => {
     try {
       const created = await teamService.createTeam(data);
       if (created) {
@@ -625,7 +681,10 @@ function TeamManagement() {
     }
   };
 
-  const handleUpdate = async (id: string, data: { name?: string; description?: string; status?: string }) => {
+  const handleUpdate = async (
+    id: string,
+    data: { name?: string; description?: string; status?: string },
+  ) => {
     try {
       const updated = await teamService.updateTeam(id, data);
       if (updated) {
@@ -651,19 +710,46 @@ function TeamManagement() {
 
   // Color palette for team cards
   const teamColors = [
-    { bg: "bg-violet-500/10", icon: "text-violet-500", border: "border-violet-500/20" },
-    { bg: "bg-cyan-500/10", icon: "text-cyan-500", border: "border-cyan-500/20" },
-    { bg: "bg-amber-500/10", icon: "text-amber-500", border: "border-amber-500/20" },
-    { bg: "bg-rose-500/10", icon: "text-rose-500", border: "border-rose-500/20" },
-    { bg: "bg-emerald-500/10", icon: "text-emerald-500", border: "border-emerald-500/20" },
-    { bg: "bg-blue-500/10", icon: "text-blue-500", border: "border-blue-500/20" },
+    {
+      bg: "bg-violet-500/10",
+      icon: "text-violet-500",
+      border: "border-violet-500/20",
+    },
+    {
+      bg: "bg-cyan-500/10",
+      icon: "text-cyan-500",
+      border: "border-cyan-500/20",
+    },
+    {
+      bg: "bg-amber-500/10",
+      icon: "text-amber-500",
+      border: "border-amber-500/20",
+    },
+    {
+      bg: "bg-rose-500/10",
+      icon: "text-rose-500",
+      border: "border-rose-500/20",
+    },
+    {
+      bg: "bg-emerald-500/10",
+      icon: "text-emerald-500",
+      border: "border-emerald-500/20",
+    },
+    {
+      bg: "bg-blue-500/10",
+      icon: "text-blue-500",
+      border: "border-blue-500/20",
+    },
   ];
 
   return (
     <div className="space-y-6">
       <SettingsCard>
         <CardHeader title="Team Management">
-          <button className="cursor-pointer btn btn-primary" onClick={() => setShowCreateModal(true)}>
+          <button
+            className="cursor-pointer btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
             <Plus className="w-4 h-4" />
             Create Team
           </button>
@@ -678,7 +764,9 @@ function TeamManagement() {
             <div className="text-center p-12 text-[rgb(var(--color-text-tertiary))]">
               <UsersRound className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p className="font-medium">No teams found</p>
-              <p className="text-sm mt-1">Create your first team to get started.</p>
+              <p className="text-sm mt-1">
+                Create your first team to get started.
+              </p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -692,7 +780,9 @@ function TeamManagement() {
                     {/* Top row */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl ${color.bg} ${color.border} border flex items-center justify-center`}>
+                        <div
+                          className={`w-10 h-10 rounded-xl ${color.bg} ${color.border} border flex items-center justify-center`}
+                        >
                           <UsersRound className={`w-5 h-5 ${color.icon}`} />
                         </div>
                         <div>
@@ -707,10 +797,11 @@ function TeamManagement() {
                         </div>
                       </div>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${team.status === "active"
-                          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                          : "bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] border-[rgb(var(--color-border))]"
-                          }`}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                          team.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                            : "bg-[rgb(var(--color-surface-hover))] text-[rgb(var(--color-text-tertiary))] border-[rgb(var(--color-border))]"
+                        }`}
                       >
                         {team.status || "Active"}
                       </span>
@@ -719,10 +810,18 @@ function TeamManagement() {
                     {/* Lead */}
                     {team.lead && (
                       <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))]">
-                        <Avatar name={team.lead.name} avatar={team.lead.avatar} size="sm" />
+                        <Avatar
+                          name={team.lead.name}
+                          avatar={team.lead.avatar}
+                          size="sm"
+                        />
                         <div className="min-w-0">
-                          <p className="text-xs font-medium text-[rgb(var(--color-text-primary))] truncate">{team.lead.name}</p>
-                          <p className="text-[10px] text-[rgb(var(--color-text-tertiary))]">Team Lead</p>
+                          <p className="text-xs font-medium text-[rgb(var(--color-text-primary))] truncate">
+                            {team.lead.name}
+                          </p>
+                          <p className="text-[10px] text-[rgb(var(--color-text-tertiary))]">
+                            Team Lead
+                          </p>
                         </div>
                       </div>
                     )}
@@ -731,13 +830,21 @@ function TeamManagement() {
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex items-center gap-1.5 text-xs text-[rgb(var(--color-text-secondary))]">
                         <Users className="w-3.5 h-3.5" />
-                        <span className="font-medium">{team.memberCount || team.members?.length || 0}</span>
-                        <span className="text-[rgb(var(--color-text-tertiary))]">members</span>
+                        <span className="font-medium">
+                          {team.memberCount || team.members?.length || 0}
+                        </span>
+                        <span className="text-[rgb(var(--color-text-tertiary))]">
+                          members
+                        </span>
                       </div>
                       <div className="w-px h-3 bg-[rgb(var(--color-border))]" />
                       <div className="flex items-center gap-1.5 text-xs text-[rgb(var(--color-text-secondary))]">
-                        <span className="font-medium">{team.projectCount || team.projects?.length || 0}</span>
-                        <span className="text-[rgb(var(--color-text-tertiary))]">projects</span>
+                        <span className="font-medium">
+                          {team.projectCount || team.projects?.length || 0}
+                        </span>
+                        <span className="text-[rgb(var(--color-text-tertiary))]">
+                          projects
+                        </span>
                       </div>
                     </div>
 
@@ -801,7 +908,8 @@ function TeamManagement() {
                 Delete Team
               </h3>
               <p className="text-sm text-[rgb(var(--color-text-secondary))]">
-                Are you sure you want to delete this team? All team data will be permanently removed.
+                Are you sure you want to delete this team? All team data will be
+                permanently removed.
               </p>
             </div>
             <div className="flex gap-3 p-4 border-t border-[rgb(var(--color-border))] bg-[rgba(var(--color-surface-hover),0.3)]">
@@ -860,14 +968,17 @@ function TeamFormModal({
     }
   };
 
-  const formInput = "w-full px-4 py-2.5 bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/30 focus:border-[rgb(var(--color-accent))] transition-all duration-200";
+  const formInput =
+    "w-full px-4 py-2.5 bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))] rounded-xl text-[rgb(var(--color-text-primary))] text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent))]/30 focus:border-[rgb(var(--color-accent))] transition-all duration-200";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
       <div className="bg-[rgb(var(--color-surface))] rounded-2xl shadow-2xl shadow-black/20 w-full max-w-md flex flex-col border border-[rgb(var(--color-border))] animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[rgb(var(--color-border))] bg-gradient-to-r from-[rgba(var(--color-surface-hover),0.5)] to-transparent rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-[rgb(var(--color-text-primary))]">{title}</h2>
+          <h2 className="text-lg font-semibold text-[rgb(var(--color-text-primary))]">
+            {title}
+          </h2>
           <button
             onClick={onClose}
             type="button"
@@ -880,7 +991,9 @@ function TeamFormModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">Team Name</label>
+            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">
+              Team Name
+            </label>
             <input
               type="text"
               value={name}
@@ -892,7 +1005,9 @@ function TeamFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">Description</label>
+            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">
+              Description
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -903,7 +1018,9 @@ function TeamFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">Team Lead</label>
+            <label className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-2">
+              Team Lead
+            </label>
             <LeadSelect
               value={leadId}
               onChange={(id: string) => setLeadId(id)}
@@ -915,16 +1032,22 @@ function TeamFormModal({
           {team && (
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-[rgb(var(--color-background))] border border-[rgb(var(--color-border))]">
               <div>
-                <p className="text-sm font-medium text-[rgb(var(--color-text-primary))]">Team Status</p>
+                <p className="text-sm font-medium text-[rgb(var(--color-text-primary))]">
+                  Team Status
+                </p>
                 <p className="text-[11px] text-[rgb(var(--color-text-tertiary))] mt-0.5">
-                  {status === "ACTIVE" ? "Team is currently active" : "Team is idle"}
+                  {status === "ACTIVE"
+                    ? "Team is currently active"
+                    : "Team is idle"}
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={status === "ACTIVE"}
-                  onChange={(e) => setStatus(e.target.checked ? "ACTIVE" : "IDLE")}
+                  onChange={(e) =>
+                    setStatus(e.target.checked ? "ACTIVE" : "IDLE")
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-[rgb(var(--color-border))] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[rgba(var(--color-accent),0.2)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[rgb(var(--color-border))] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[rgb(var(--color-accent))]"></div>
@@ -1046,7 +1169,9 @@ function NotificationSettings({
                     <p className="text-sm font-medium text-[rgb(var(--color-text-primary))]">
                       {item.label}
                     </p>
-                    <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-0.5">{item.description}</p>
+                    <p className="text-xs text-[rgb(var(--color-text-tertiary))] mt-0.5">
+                      {item.description}
+                    </p>
                   </div>
                 </label>
               ))}
@@ -1206,7 +1331,9 @@ function SecuritySettings({
                   }
                   className="w-4 h-4 accent-[rgb(var(--color-accent))] rounded"
                 />
-                <span className="text-sm text-[rgb(var(--color-text-primary))]">Require numbers</span>
+                <span className="text-sm text-[rgb(var(--color-text-primary))]">
+                  Require numbers
+                </span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-[rgb(var(--color-surface-hover))] transition-colors">
                 <input

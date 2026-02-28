@@ -13,7 +13,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  user: User;
+  user: User | null;
 }
 
 export default function DashboardLayout({
@@ -42,7 +42,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-[rgb(var(--color-background))]">
       <Sidebar
-        userRole={user.role}
+        userRole={user?.role ?? "employee"}
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />

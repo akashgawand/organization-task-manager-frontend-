@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 
 export interface TopNavProps {
-  user: User;
+  user: User | null;
   onOpenTaskModal?: () => void;
   isSidebarCollapsed?: boolean;
 }
