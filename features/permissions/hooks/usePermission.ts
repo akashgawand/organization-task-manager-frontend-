@@ -1,21 +1,33 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { User, Team, Project } from "@/types";
+import { User, UserRole, Team, Project } from "@/types";
 import { Permission, rolePermissions } from "../types";
 import { mockUsers, mockTeams } from "@/lib/mockData";
 import { canAssignTask, canViewProject, canViewAnalytics } from "../utils";
 import { ExtendedProject } from "@/features/projects/types";
 import { authService } from "@/app/services/authServices";
 
+/** Read user once synchronously – avoids any loading flash on client-side navigation */
+function readUserFromStorage(): User | null {
+  if (typeof window === 'undefined') return null;
+  return authService.getCurrentUser();
+}
+
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
+  // Lazy initializer: runs synchronously on first render.
+  // On client-side navigation (sidebar clicks), window is always available so
+  // user is populated immediately — no isLoading phase, no spinner flash.
+  const [user, setUser] = useState<User | null>(readUserFromStorage);
+
+  // isLoading is only needed for the very first SSR load where window is absent.
+  const [isLoading, setIsLoading] = useState(typeof window === 'undefined');
 
   useEffect(() => {
-    setIsMounted(true);
+    // Re-sync in case localStorage changed between SSR and hydration
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
+    setIsLoading(false);
 
     const handleUserUpdate = (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -32,7 +44,6 @@ export function useAuth() {
     if (!user) return [];
 
     // Attempt to map real user to mock user to reuse mock team logic
-    // Real user has email. Mock users have email.
     const mockUser = mockUsers.find(u => u.email === user.email);
     const mockId = mockUser ? mockUser.id : user.id;
 
@@ -41,34 +52,26 @@ export function useAuth() {
     );
   }, [user]);
 
-  // Fallback for SSR or unauthenticated state to prevent crashes
-  // In a real app, pages would be protected by middleware/layout
+  if (isLoading) {
+    return {
+      user: null as unknown as User,
+      userTeams: [],
+      isLoading: true,
+    };
+  }
+
   const safeUser: User = user || {
     id: 'guest',
     name: 'Guest',
     email: '',
-    role: 'employee',
+    role: 'employee' as UserRole,
     isActive: false,
-    createdAt: new Date()
+    createdAt: new Date(),
   };
 
-  // Prevent hydration mismatch by returning default until mounted
-  if (!isMounted) {
-    return {
-      user: {
-        id: '',
-        name: '',
-        email: '',
-        role: 'employee',
-        isActive: false,
-        createdAt: new Date()
-      } as User,
-      userTeams: []
-    };
-  }
-
-  return { user: safeUser, userTeams };
+  return { user: safeUser, userTeams, isLoading: false };
 }
+
 
 /**
  * Utility function to change the mock user role for testing
@@ -90,8 +93,11 @@ export function setMockUserRole(role: User["role"]) {
  * }
  */
 export function usePermission(permission: keyof Permission): boolean {
-  const { user } = useAuth();
-  return rolePermissions[user.role][permission];
+  const { user, isLoading } = useAuth();
+  // While loading or unauthenticated, deny all permissions
+  if (isLoading || !user) return false;
+  const role = user.role.toLowerCase() as UserRole;
+  return rolePermissions[role]?.[permission] ?? false;
 }
 
 /**
@@ -99,8 +105,10 @@ export function usePermission(permission: keyof Permission): boolean {
  * @returns Permission object with all permission flags
  */
 export function usePermissions(): Permission {
-  const { user } = useAuth();
-  return rolePermissions[user.role];
+  const { user, isLoading } = useAuth();
+  if (isLoading || !user) return rolePermissions['employee'];
+  const role = user.role.toLowerCase() as UserRole;
+  return rolePermissions[role] ?? rolePermissions['employee'];
 }
 
 /**
