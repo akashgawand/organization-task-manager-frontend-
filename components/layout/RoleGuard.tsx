@@ -54,7 +54,6 @@ export default function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
           redirectPath = "/dashboard/admin";
           break;
         case "team_lead":
-        case "team_leader":
           redirectPath = "/dashboard/team-lead";
           break;
         case "senior_developer":

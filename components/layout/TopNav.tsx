@@ -163,74 +163,76 @@ export default function TopNav({
           <div className="h-5 w-px bg-[rgb(var(--color-border))]/60 mx-1" />
 
           {/* User Menu */}
-          <div className="relative" ref={userMenuRef}>
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className={`cursor-pointer flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl transition-all duration-200 ${
-                showUserMenu
-                  ? "bg-[rgb(var(--color-surface-hover))] ring-1 ring-[rgb(var(--color-border))]"
-                  : "hover:bg-[rgb(var(--color-surface-hover))]"
-              }`}
-            >
-              <Avatar name={user.name} avatar={user.avatar} size="sm" />
-              <div className="text-left hidden md:block">
-                <p className="text-sm font-semibold text-[rgb(var(--color-text-primary))] leading-tight">
-                  {user.name}
-                </p>
-                <p className="text-[11px] text-[rgb(var(--color-text-tertiary))] capitalize leading-tight mt-0.5">
-                  {user.role.replace(/_/g, " ")}
-                </p>
-              </div>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-[rgb(var(--color-text-tertiary))] hidden md:block transition-transform duration-200 ${
-                  showUserMenu ? "rotate-180" : ""
+          {user && (
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className={`cursor-pointer flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl transition-all duration-200 ${
+                  showUserMenu
+                    ? "bg-[rgb(var(--color-surface-hover))] ring-1 ring-[rgb(var(--color-border))]"
+                    : "hover:bg-[rgb(var(--color-surface-hover))]"
                 }`}
-              />
-            </button>
+              >
+                <Avatar name={user.name} avatar={user.avatar} size="sm" />
+                <div className="text-left hidden md:block">
+                  <p className="text-sm font-semibold text-[rgb(var(--color-text-primary))] leading-tight">
+                    {user.name}
+                  </p>
+                  <p className="text-[11px] text-[rgb(var(--color-text-tertiary))] capitalize leading-tight mt-0.5">
+                    {user.role.replace(/_/g, " ")}
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-[rgb(var(--color-text-tertiary))] hidden md:block transition-transform duration-200 ${
+                    showUserMenu ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
 
-            {/* Dropdown */}
-            {showUserMenu && (
-              <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-2xl shadow-2xl shadow-black/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                {/* User Card */}
-                <div className="p-5 bg-gradient-to-br from-[rgba(var(--color-accent),0.06)] via-transparent to-transparent">
-                  <div className="flex items-center gap-3.5">
-                    <Avatar name={user.name} avatar={user.avatar} size="lg" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-[rgb(var(--color-text-primary))] truncate">
-                        {user.name}
-                      </p>
-                      <p className="text-xs text-[rgb(var(--color-text-secondary))] truncate mt-0.5">
-                        {user.email}
-                      </p>
-                      <span className="inline-flex items-center mt-2 text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[rgba(var(--color-accent),0.1)] text-[rgb(var(--color-accent))] border border-[rgba(var(--color-accent),0.15)]">
-                        {user.role.replace(/_/g, " ")}
-                      </span>
+              {/* Dropdown */}
+              {showUserMenu && (
+                <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-[rgb(var(--color-surface))] border border-[rgb(var(--color-border))] rounded-2xl shadow-2xl shadow-black/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* User Card */}
+                  <div className="p-5 bg-gradient-to-br from-[rgba(var(--color-accent),0.06)] via-transparent to-transparent">
+                    <div className="flex items-center gap-3.5">
+                      <Avatar name={user.name} avatar={user.avatar} size="lg" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-[rgb(var(--color-text-primary))] truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-[rgb(var(--color-text-secondary))] truncate mt-0.5">
+                          {user.email}
+                        </p>
+                        <span className="inline-flex items-center mt-2 text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[rgba(var(--color-accent),0.1)] text-[rgb(var(--color-accent))] border border-[rgba(var(--color-accent),0.15)]">
+                          {user.role.replace(/_/g, " ")}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="p-2 border-t border-[rgb(var(--color-border))]/60">
-                  <Link
-                    href="/dashboard/user-settings"
-                    onClick={() => setShowUserMenu(false)}
-                    className="group cursor-pointer flex items-center gap-3 w-full px-4 py-2.5 text-left rounded-xl text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))] transition-all duration-200"
-                  >
-                    <SettingsIcon className="w-4 h-4 group-hover:rotate-45 transition-transform duration-200" />
-                    <span className="text-sm font-medium">User Settings</span>
-                  </Link>
+                  {/* Actions */}
+                  <div className="p-2 border-t border-[rgb(var(--color-border))]/60">
+                    <Link
+                      href="/dashboard/user-settings"
+                      onClick={() => setShowUserMenu(false)}
+                      className="group cursor-pointer flex items-center gap-3 w-full px-4 py-2.5 text-left rounded-xl text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-surface-hover))] hover:text-[rgb(var(--color-text-primary))] transition-all duration-200"
+                    >
+                      <SettingsIcon className="w-4 h-4 group-hover:rotate-45 transition-transform duration-200" />
+                      <span className="text-sm font-medium">User Settings</span>
+                    </Link>
 
-                  <button
-                    onClick={handleLogout}
-                    className="group cursor-pointer flex items-center gap-3 w-full px-4 py-2.5 text-left rounded-xl text-[rgb(var(--color-text-secondary))] hover:bg-red-500/8 hover:text-red-500 transition-all duration-200"
-                  >
-                    <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
-                    <span className="text-sm font-medium">Sign Out</span>
-                  </button>
+                    <button
+                      onClick={handleLogout}
+                      className="group cursor-pointer flex items-center gap-3 w-full px-4 py-2.5 text-left rounded-xl text-[rgb(var(--color-text-secondary))] hover:bg-red-500/8 hover:text-red-500 transition-all duration-200"
+                    >
+                      <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
+                      <span className="text-sm font-medium">Sign Out</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </header>
